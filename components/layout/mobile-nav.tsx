@@ -9,7 +9,7 @@ import { useScannerModal } from '@/lib/store/modal-store'; // Adjust path as nee
 const navItems = [
   { label: 'Home', icon: ShoppingCart, href: '/cashier' },
   { label: 'Sales', icon: History, href: '/cashier/sales' },
-  { label: 'Scan', icon: ScanLine, href: '#', isButton: true }, // Marked as button
+  { label: 'Scan', icon: ScanLine, href: '#', isButton: true }, 
   { label: 'Account', icon: UserCircle, href: '/cashier/profile' },
 ];
 

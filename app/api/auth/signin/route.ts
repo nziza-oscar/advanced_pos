@@ -4,10 +4,11 @@ import { User } from '@/lib/database/models';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { emailOrUsername, password } = body;
+    const { username, password } = body;
+
 
     // Validate required fields
-    if (!emailOrUsername || !password) {
+    if (!username || !password) {
       return NextResponse.json(
         { error: 'Email/Username and password are required' },
         { status: 400 }
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by credentials
-    const user = await User.findByCredentials(emailOrUsername, password);
+    const user = await User.findByCredentials(username, password);
 
     // Generate JWT token
     const token = user.generateAuthToken();

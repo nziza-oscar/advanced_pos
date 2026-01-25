@@ -4,7 +4,9 @@ import  Category  from './Category';
 import Transaction from './Transaction';
 import  TransactionItem  from './TransactionItem';
 import  User from './User';
-
+import Supplier from './Supplier';
+import StockLog from './StockLog';
+import Setting from './Setting';
 // Define associations
 Category.hasMany(Product, {
   foreignKey: 'category_id',
@@ -47,9 +49,24 @@ Transaction.belongsTo(User, {
   as: 'cashier'
 });
 
+// Supplier -> Product
+// Supplier.hasMany(Product, { foreignKey: 'supplier_id', as: 'products' });
+// Product.belongsTo(Supplier, { foreignKey: 'supplier_id', as: 'supplier' });
+
+// Product -> StockLog
+Product.hasMany(StockLog, { foreignKey: 'product_id', as: 'stock_logs' });
+StockLog.belongsTo(Product, { foreignKey: 'product_id', as: 'product' });
+
+// User -> StockLog (To see which Inventory Manager/Admin did the change)
+User.hasMany(StockLog, { foreignKey: 'user_id', as: 'performed_stock_actions' });
+StockLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 export {
   sequelize,
+  Setting,
   Product,
+  // Supplier,
+  StockLog,
   Category,
   Transaction,
   TransactionItem,

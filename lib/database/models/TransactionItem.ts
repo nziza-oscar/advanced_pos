@@ -7,12 +7,14 @@ class TransactionItem extends Model<InferAttributes<TransactionItem>, InferCreat
   declare product_id: string;
   declare barcode: string;
   declare product_name: string;
+  declare product_image: string;
   declare quantity: number;
   declare unit_price: number;
   declare total_price: number;
   declare discount_amount: number;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
 }
 
 TransactionItem.init({
@@ -28,6 +30,11 @@ TransactionItem.init({
   product_id: {
     type: DataTypes.UUID,
     allowNull: false
+  },
+  product_image:{
+   type:DataTypes.STRING,
+   allowNull:true
+
   },
   barcode: {
     type: DataTypes.STRING(100),

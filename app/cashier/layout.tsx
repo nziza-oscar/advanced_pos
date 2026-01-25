@@ -6,7 +6,8 @@ import {
   ShoppingCart, 
   History, 
   UserCircle,
-  HelpCircle
+  HelpCircle,
+  ChartBar
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -20,6 +21,7 @@ export default function CashierLayout({ children }: { children: ReactNode }) {
   const navItems = [
     { name: 'POS Terminal', href: '/cashier', icon: ShoppingCart },
     { name: 'My Sales', href: '/cashier/sales', icon: History },
+    { name: 'Statistics', icon: ChartBar, href: '/cashier/statistics' },
     { name: 'Profile', href: '/cashier/profile', icon: UserCircle },
   ];
 

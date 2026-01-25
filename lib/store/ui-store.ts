@@ -1,17 +1,35 @@
+'use client';
+
 import { create } from 'zustand';
 
+// Define the types for our modals to keep things type-safe
+export type ModalType = 'add-product' | 'edit-product' | 'add-category' | 'edit-category' | null;
+
+interface ModalData {
+  product?: any;
+  category?: any;
+  apiUrl?: string;
+}
+
 interface UIState {
-  // Sidebar state
+  // --- Sidebar state ---
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   
-  // Theme
+  // --- Theme ---
   theme: 'light' | 'dark';
   toggleTheme: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
   
-  // Scanning
+  // --- Modal Management (NEW) ---
+  isOpen: boolean;
+  modalType: ModalType;
+  modalData: ModalData;
+  openModal: (type: ModalType, data?: ModalData) => void;
+  closeModal: () => void;
+
+  // --- Scanning ---
   isScanning: boolean;
   lastScannedBarcode: string;
   scanError: string | null;
@@ -20,7 +38,7 @@ interface UIState {
   setLastScannedBarcode: (barcode: string) => void;
   setScanError: (error: string | null) => void;
   
-  // Notifications
+  // --- Notifications ---
   notifications: Array<{
     id: string;
     type: 'success' | 'error' | 'info' | 'warning';
@@ -36,15 +54,13 @@ interface UIState {
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
   
-  // Loading states
+  // --- Loading states ---
   isLoading: Record<string, boolean>;
   setLoading: (key: string, loading: boolean) => void;
   
-  // Search
+  // --- Search & Tabs ---
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  
-  // Active tab
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }
@@ -61,6 +77,21 @@ export const useUIStore = create<UIState>((set, get) => ({
     theme: state.theme === 'light' ? 'dark' : 'light' 
   })),
   setTheme: (theme) => set({ theme }),
+
+  // Modal Management Logic
+  isOpen: false,
+  modalType: null,
+  modalData: {},
+  openModal: (type, data = {}) => set({ 
+    isOpen: true, 
+    modalType: type, 
+    modalData: data 
+  }),
+  closeModal: () => set({ 
+    isOpen: false, 
+    modalType: null, 
+    modalData: {} 
+  }),
   
   // Scanning
   isScanning: false,
@@ -86,10 +117,9 @@ export const useUIStore = create<UIState>((set, get) => ({
     };
     
     set((state) => ({
-      notifications: [newNotification, ...state.notifications].slice(0, 5) // Keep last 5
+      notifications: [newNotification, ...state.notifications].slice(0, 5)
     }));
     
-    // Auto remove after 5 seconds
     setTimeout(() => {
       get().removeNotification(newNotification.id);
     }, 5000);
@@ -123,22 +153,7 @@ export const useIsLoading = (key: string) => {
   return useUIStore((state) => state.isLoading[key] || false);
 };
 
-export const useScanState = () => {
-  const isScanning = useUIStore((state) => state.isScanning);
-  const lastScannedBarcode = useUIStore((state) => state.lastScannedBarcode);
-  const scanError = useUIStore((state) => state.scanError);
-  const startScanning = useUIStore((state) => state.startScanning);
-  const stopScanning = useUIStore((state) => state.stopScanning);
-  const setLastScannedBarcode = useUIStore((state) => state.setLastScannedBarcode);
-  const setScanError = useUIStore((state) => state.setScanError);
-  
-  return {
-    isScanning,
-    lastScannedBarcode,
-    scanError,
-    startScanning,
-    stopScanning,
-    setLastScannedBarcode,
-    setScanError
-  };
+export const useModal = () => {
+  const { isOpen, modalType, modalData, openModal, closeModal } = useUIStore();
+  return { isOpen, modalType, modalData, openModal, closeModal };
 };

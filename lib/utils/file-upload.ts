@@ -3,23 +3,14 @@ import fs from 'fs/promises';
 import sharp from 'sharp';
 import { v4 as uuidv4 } from 'uuid';
 
-// Allowed image types
-export const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/gif'
-];
-
-// Maximum file size (5MB)
+export const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 export const MAX_FILE_SIZE = 5 * 1024 * 1024;
-
-// Upload directories
 export const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads');
 export const THUMBNAIL_DIR = path.join(UPLOAD_DIR, 'thumbnails');
 
-// Ensure upload directories exist
+/**
+ * Ensures upload directories exist
+ */
 export async function ensureUploadDirectories() {
   try {
     await fs.mkdir(UPLOAD_DIR, { recursive: true });
@@ -29,172 +20,69 @@ export async function ensureUploadDirectories() {
   }
 }
 
-// Validate uploaded file
-export function validateFile(file: {
-  mimetype: string;
-  size: number;
-  originalname: string;
-}): { valid: boolean; error?: string } {
-  // Check file type
-  if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+/**
+ * Validates the uploaded file object
+ */
+export function validateFile(file: File): { valid: boolean; error?: string } {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return {
       valid: false,
-      error: `Invalid file type. Allowed types: ${ALLOWED_IMAGE_TYPES.join(', ')}`
+      error: `Invalid file type. Allowed: ${ALLOWED_IMAGE_TYPES.join(', ')}`,
     };
   }
 
-  // Check file size
   if (file.size > MAX_FILE_SIZE) {
     return {
       valid: false,
-      error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB`
+      error: `File too large. Maximum size is 5MB`,
     };
   }
 
   return { valid: true };
 }
 
-// Generate unique filename
-export function generateFilename(originalName: string): string {
-  const ext = path.extname(originalName);
-  const name = path.basename(originalName, ext).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+/**
+ * Handles the full upload process: Main image + Thumbnail
+ */
+export async function uploadProductImage(file: File) {
+  await ensureUploadDirectories();
+
+  const buffer = Buffer.from(await file.arrayBuffer());
   const uniqueId = uuidv4().split('-')[0];
-  return `${name}_${uniqueId}${ext}`;
-}
+  const filename = `${Date.now()}_${uniqueId}.jpg`; 
 
-// Save uploaded file
-export async function saveUploadedFile(
-  fileBuffer: Buffer,
-  filename: string
-): Promise<{
-  path: string;
-  url: string;
-  size: number;
-  mimetype: string;
-  filename: string;
-}> {
-  const filePath = path.join(UPLOAD_DIR, filename);
-  
-  await fs.writeFile(filePath, fileBuffer);
-  
-  const stats = await fs.stat(filePath);
-  
-  return {
-    path: filePath,
-    url: `/uploads/${filename}`,
-    size: stats.size,
-    mimetype: 'image/jpeg', // After processing, all images become JPEG
-    filename
-  };
-}
-
-// Create thumbnail
-export async function createThumbnail(
-  fileBuffer: Buffer,
-  filename: string,
-  width: number = 200,
-  height: number = 200
-): Promise<{
-  path: string;
-  url: string;
-  filename: string;
-}> {
-  const thumbnailFilename = `thumb_${filename}`;
-  const thumbnailPath = path.join(THUMBNAIL_DIR, thumbnailFilename);
-  
-  // Resize and compress image for thumbnail
-  await sharp(fileBuffer)
-    .resize(width, height, {
-      fit: 'cover',
-      position: 'center'
-    })
-    .jpeg({ quality: 80 })
-    .toFile(thumbnailPath);
-  
-  return {
-    path: thumbnailPath,
-    url: `/uploads/thumbnails/${thumbnailFilename}`,
-    filename: thumbnailFilename
-  };
-}
-
-// Process image (resize, compress, convert to JPEG)
-export async function processImage(
-  fileBuffer: Buffer,
-  filename: string,
-  maxWidth: number = 800,
-  maxHeight: number = 800
-): Promise<{
-  buffer: Buffer;
-  width: number;
-  height: number;
-}> {
-  const image = sharp(fileBuffer);
-  const metadata = await image.metadata();
-  
-  let newWidth = metadata.width || maxWidth;
-  let newHeight = metadata.height || maxHeight;
-  
-  // Resize if image is larger than max dimensions
-  if (metadata.width && metadata.width > maxWidth) {
-    newWidth = maxWidth;
-    newHeight = Math.round((maxWidth / (metadata.width || 1)) * (metadata.height || 1));
-  }
-  
-  if (newHeight > maxHeight) {
-    newHeight = maxHeight;
-    newWidth = Math.round((maxHeight / (metadata.height || 1)) * (metadata.width || 1));
-  }
-  
-  // Process image
-  const processedBuffer = await image
-    .resize(newWidth, newHeight, {
-      fit: 'inside',
-      withoutEnlargement: true
-    })
-    .jpeg({ 
-      quality: 85,
-      progressive: true,
-      force: true // Convert all images to JPEG for consistency
-    })
+  // 1. Process and Save Main Image
+  const mainImage = await sharp(buffer)
+    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
+    .jpeg({ quality: 85 })
     .toBuffer();
-  
+
+  await fs.writeFile(path.join(UPLOAD_DIR, filename), mainImage);
+
+  // 2. Process and Save Thumbnail
+  await sharp(buffer)
+    .resize(200, 200, { fit: 'cover', position: 'center' })
+    .jpeg({ quality: 75 })
+    .toFile(path.join(THUMBNAIL_DIR, `thumb_${filename}`));
+
   return {
-    buffer: processedBuffer,
-    width: newWidth,
-    height: newHeight
+    url: `/uploads/${filename}`,
+    thumbnailUrl: `/uploads/thumbnails/thumb_${filename}`,
+    filename,
   };
 }
 
-// Delete file
-export async function deleteFile(fileUrl: string): Promise<void> {
+/**
+ * Deletes main image and thumbnail
+ */
+export async function deleteProductImage(fileUrl: string) {
   try {
     if (fileUrl && fileUrl.startsWith('/uploads/')) {
       const filename = path.basename(fileUrl);
-      const filePath = path.join(UPLOAD_DIR, filename);
-      const thumbnailPath = path.join(THUMBNAIL_DIR, `thumb_${filename}`);
-      
-      // Delete main image
-      await fs.unlink(filePath).catch(() => {});
-      
-      // Delete thumbnail
-      await fs.unlink(thumbnailPath).catch(() => {});
+      await fs.unlink(path.join(UPLOAD_DIR, filename)).catch(() => {});
+      await fs.unlink(path.join(THUMBNAIL_DIR, `thumb_${filename}`)).catch(() => {});
     }
   } catch (error) {
     console.error('Error deleting file:', error);
-  }
-}
-
-// Get file info
-export async function getFileInfo(filePath: string) {
-  try {
-    const stats = await fs.stat(filePath);
-    return {
-      exists: true,
-      size: stats.size,
-      modified: stats.mtime
-    };
-  } catch {
-    return { exists: false };
   }
 }

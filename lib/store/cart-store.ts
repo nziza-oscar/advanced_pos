@@ -2,13 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export interface CartItem {
-  id: string;
-  product_id: string;
+  product_id: string;   // Matches backend item.product_id
   barcode: string;
-  name: string;
-  price: number;
+  name: string;         // Used for UI
+  product_name: string; // Matches backend item.product_name
+  unit_price: number;   // Matches backend item.unit_price
   quantity: number;
-  max_quantity?: number; // Available stock
+  stock_quantity: number;
   image_url?: string;
 }
 
@@ -19,29 +19,32 @@ interface CartStore {
   paymentMethod: 'cash' | 'momo' | 'card' | 'bank';
   momoPhone: string;
   notes: string;
-  
+  subtotal: number;
+  taxAmount: number;
+  discountAmount: number;
+  totalAmount: number;
+  taxRate: number;
+  discountRate: number;
+
   // Actions
-  addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
-  updateItemQuantity: (id: string, quantity: number) => void;
-  removeItem: (id: string) => void;
+  addItem: (product: any) => void;
+  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (productId: string) => void;
   clearCart: () => void;
   setCustomerInfo: (name: string, phone: string) => void;
   setPaymentMethod: (method: 'cash' | 'momo' | 'card' | 'bank') => void;
   setMomoPhone: (phone: string) => void;
   setNotes: (notes: string) => void;
-  
-  // Computed values
-  subtotal: number;
-  taxAmount: number;
-  discountAmount: number;
-  totalAmount: number;
-  
-  // Settings
-  taxRate: number;
-  discountRate: number;
-  setTaxRate: (rate: number) => void;
-  setDiscountRate: (rate: number) => void;
+  getCheckoutPayload: () => any; // Prepares data for your API
 }
+
+const calculateTotals = (items: CartItem[], taxRate: number, discountRate: number) => {
+  const subtotal = items.reduce((acc, item) => acc + item.unit_price * item.quantity, 0);
+  const taxAmount = subtotal * taxRate;
+  const discountAmount = subtotal * discountRate;
+  const totalAmount = subtotal + taxAmount - discountAmount;
+  return { subtotal, taxAmount, discountAmount, totalAmount };
+};
 
 export const useCartStore = create<CartStore>()(
   persist(
@@ -52,151 +55,114 @@ export const useCartStore = create<CartStore>()(
       paymentMethod: 'cash',
       momoPhone: '',
       notes: '',
-      taxRate: 0.15, // 15% VAT
+      taxRate: 0.18, 
       discountRate: 0,
+      subtotal: 0,
+      taxAmount: 0,
+      discountAmount: 0,
+      totalAmount: 0,
 
-      // Computed values
-      get subtotal() {
-        return get().items.reduce(
-          (total, item) => total + (item.price * item.quantity),
-          0
-        );
-      },
+      addItem: (product) => {
+        const { items, taxRate, discountRate } = get();
+        const existingItem = items.find((item) => item.product_id === product.id);
 
-      get taxAmount() {
-        return get().subtotal * get().taxRate;
-      },
-
-      get discountAmount() {
-        return get().subtotal * get().discountRate;
-      },
-
-      get totalAmount() {
-        return get().subtotal + get().taxAmount - get().discountAmount;
-      },
-
-      // Actions
-      addItem: (newItem) => {
-        const { items } = get();
-        const existingItem = items.find(item => item.product_id === newItem.product_id);
-
+        let updatedItems;
         if (existingItem) {
-          // Update quantity if item already exists
-          const newQuantity = existingItem.quantity + (newItem.quantity || 1);
-          const finalQuantity = newItem.max_quantity 
-            ? Math.min(newQuantity, newItem.max_quantity)
-            : newQuantity;
-          
-          set({
-            items: items.map(item =>
-              item.product_id === newItem.product_id
-                ? { ...item, quantity: finalQuantity }
-                : item
-            )
-          });
+          const newQuantity = existingItem.quantity + 1;
+          if (newQuantity > product.stock_quantity) return;
+          updatedItems = items.map((item) =>
+            item.product_id === product.id ? { ...item, quantity: newQuantity } : item
+          );
         } else {
-          // Add new item
-          set({
-            items: [
-              ...items,
-              {
-                ...newItem,
-                quantity: newItem.quantity || 1
-              }
-            ]
-          });
+          updatedItems = [
+            ...items,
+            {
+              product_id: product.id,
+              barcode: product.barcode,
+              name: product.name,
+              product_name: product.name,
+              unit_price: Number(product.price),
+              stock_quantity: product.stock_quantity,
+              image_url: product.image_url,
+              quantity: 1,
+            },
+          ];
         }
-      },
-
-      updateItemQuantity: (id, quantity) => {
-        const { items } = get();
-        const item = items.find(item => item.id === id);
-        
-        if (!item) return;
-
-        const finalQuantity = item.max_quantity 
-          ? Math.min(quantity, item.max_quantity)
-          : Math.max(1, quantity); // Minimum 1
 
         set({
-          items: items.map(item =>
-            item.id === id ? { ...item, quantity: finalQuantity } : item
-          )
+          items: updatedItems,
+          ...calculateTotals(updatedItems, taxRate, discountRate),
         });
       },
 
-      removeItem: (id) => {
+      updateQuantity: (productId, quantity) => {
+        const { items, taxRate, discountRate } = get();
+        const updatedItems = items.map((item) => {
+          if (item.product_id === productId) {
+            const finalQty = Math.min(Math.max(1, quantity), item.stock_quantity);
+            return { ...item, quantity: finalQty };
+          }
+          return item;
+        });
+
         set({
-          items: get().items.filter(item => item.id !== id)
+          items: updatedItems,
+          ...calculateTotals(updatedItems, taxRate, discountRate),
         });
       },
 
-      clearCart: () => {
+      removeItem: (productId) => {
+        const { items, taxRate, discountRate } = get();
+        const updatedItems = items.filter((item) => item.product_id !== productId);
         set({
-          items: [],
-          customerName: '',
-          customerPhone: '',
-          momoPhone: '',
-          notes: ''
+          items: updatedItems,
+          ...calculateTotals(updatedItems, taxRate, discountRate),
         });
       },
 
-      setCustomerInfo: (name, phone) => {
-        set({ customerName: name, customerPhone: phone });
-      },
+      clearCart: () => set({
+        items: [],
+        customerName: '',
+        customerPhone: '',
+        momoPhone: '',
+        notes: '',
+        subtotal: 0,
+        taxAmount: 0,
+        discountAmount: 0,
+        totalAmount: 0,
+      }),
 
-      setPaymentMethod: (method) => {
-        set({ 
-          paymentMethod: method,
-          momoPhone: method !== 'momo' ? '' : get().momoPhone
-        });
-      },
+      setCustomerInfo: (name, phone) => set({ customerName: name, customerPhone: phone }),
+      setPaymentMethod: (method) => set({ paymentMethod: method }),
+      setMomoPhone: (phone) => set({ momoPhone: phone }),
+      setNotes: (notes) => set({ notes }),
 
-      setMomoPhone: (phone) => {
-        set({ momoPhone: phone });
-      },
-
-      setNotes: (notes) => {
-        set({ notes });
-      },
-
-      setTaxRate: (rate) => {
-        set({ taxRate: rate });
-      },
-
-      setDiscountRate: (rate) => {
-        set({ discountRate: rate });
+      // This prepares the exact body for your POST /api/transactions
+      getCheckoutPayload: () => {
+        const state = get();
+        return {
+          items: state.items, // Array of {product_id, barcode, product_name, quantity, unit_price}
+          subtotal: state.subtotal,
+          tax_amount: state.taxAmount,
+          discount_amount: state.discountAmount,
+          total_amount: state.totalAmount,
+          amount_paid: state.totalAmount, // Default to total
+          payment_method: state.paymentMethod,
+          momo_phone: state.momoPhone,
+          customer_name: state.customerName || 'Walk-in Customer'
+        };
       }
     }),
-    {
-      name: 'pos-cart-storage',
-      partialize: (state) => ({
-        items: state.items,
-        customerName: state.customerName,
-        customerPhone: state.customerPhone,
-        paymentMethod: state.paymentMethod,
-        momoPhone: state.momoPhone,
-        notes: state.notes,
-        taxRate: state.taxRate,
-        discountRate: state.discountRate
-      })
-    }
+    { name: 'pos-cart-storage',version: 1 }
   )
 );
 
-// Helper hooks
 export const useCartSummary = () => {
-  const subtotal = useCartStore((state) => state.subtotal);
-  const taxAmount = useCartStore((state) => state.taxAmount);
-  const discountAmount = useCartStore((state) => state.discountAmount);
-  const totalAmount = useCartStore((state) => state.totalAmount);
-  const itemsCount = useCartStore((state) => state.items.length);
-
+  const { subtotal, taxAmount, totalAmount, items } = useCartStore();
   return {
     subtotal,
     taxAmount,
-    discountAmount,
     totalAmount,
-    itemsCount
+    itemsCount: items.reduce((acc, item) => acc + item.quantity, 0),
   };
 };

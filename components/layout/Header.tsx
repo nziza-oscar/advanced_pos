@@ -107,9 +107,9 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <button className="relative p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none">
                 <ShoppingCart className="w-5 h-5 text-slate-600" />
-                {itemsCount > 0 && (
+                {items.length > 0 && (
                   <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white ring-2 ring-white animate-in zoom-in duration-300">
-                    {itemsCount}
+                    {items.length}
                   </span>
                 )}
               </button>
@@ -117,7 +117,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <DropdownMenuContent align="end" className="w-80 p-2 shadow-xl border-slate-200">
               <div className="flex justify-between items-center px-2 py-1.5">
                  <DropdownMenuLabel className="p-0 text-slate-900 text-sm">Current Cart</DropdownMenuLabel>
-                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">{itemsCount} Items</span>
+                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">{items.length} Items</span>
               </div>
               <DropdownMenuSeparator />
               
@@ -130,7 +130,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                 <>
                   <div className="max-h-64 overflow-y-auto py-1">
                     {items.map((item) => (
-                      <div key={item.id} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-md group transition-colors">
+                      <div key={item.product_id} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-md group transition-colors">
                          <div className="flex items-center gap-3">
                             <div className="h-9 w-9 bg-slate-100 rounded flex items-center justify-center border border-slate-200">
                               {item.image_url ? (
@@ -142,7 +142,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                             <div className="flex flex-col">
                               <p className="text-xs text-slate-800 line-clamp-1">{item.name}</p>
                               <p className="text-[10px] text-slate-500">
-                                {item.quantity} × {Number(item.price).toLocaleString()} FRW
+                                {item.quantity} × {Number(item.unit_price).toLocaleString()} FRW
                               </p>
                             </div>
                          </div>
@@ -151,7 +151,7 @@ export function Header({ onMenuClick }: HeaderProps) {
                           size="icon" 
                           onClick={(e) => {
                             e.preventDefault();
-                            removeItem(item.id);
+                            removeItem(item.product_id);
                           }}
                           className="h-8 w-8 text-slate-300 hover:text-red-500 group-hover:opacity-100 transition-all"
                          >

@@ -1,26 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Transaction, TransactionItem, Product, User, sequelize } from '@/lib/database/models';
+import { Transaction, TransactionItem, Product, User, StockLog, sequelize } from '@/lib/database/models';
 import { Op } from 'sequelize';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-
 function generateTransactionNumber(): string {
   const now = new Date();
-  
-  // 1. Get Date components
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
   const day = String(now.getDate()).padStart(2, '0');
-  
-  // 2. Generate a 4-character random string (Hexadecimal)
-  // This helps prevent collisions if two sales happen in the same second
   const randomSuffix = Math.random()
     .toString(16)
     .toUpperCase()
     .substring(2, 6);
-
   const datePart = `${year}${month}${day}`;
   
   return `TX-${datePart}-${randomSuffix}`;
@@ -44,7 +37,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unauthorized: Invalid token' }, { status: 401 });
     }
 
-    const created_by = decoded.id; 
+    const created_by = decoded.id;
+    const userName = decoded.full_name || decoded.username || 'Unknown User';
 
     // 2. PARSE REQUEST BODY
     const body = await request.json();
@@ -80,19 +74,23 @@ export async function POST(request: NextRequest) {
       payment_method,
       momo_phone: payment_method === 'momo' ? momo_phone : null,
       status: 'completed',
-      created_by // Automatically set from the cookie!
+      created_by
     }, { transaction: t });
 
-    // --- STEP 2: PROCESS ITEMS & UPDATE STOCK ---
+    // --- STEP 2: PROCESS ITEMS, UPDATE STOCK, AND CREATE STOCK LOGS ---
     for (const item of items) {
-      const product = await Product.findByPk(item.product_id, { transaction: t, lock: true });
+      const product = await Product.findByPk(item.product_id, { 
+        transaction: t, 
+        lock: true 
+      });
       
       if (!product) throw new Error(`Product ${item.product_name} not found.`);
       
       if (product.stock_quantity < item.quantity) {
-        throw new Error(`Insufficient stock for ${product.name}.`);
+        throw new Error(`Insufficient stock for ${product.name}. Requested: ${item.quantity}, Available: ${product.stock_quantity}`);
       }
 
+      // Create transaction item
       await TransactionItem.create({
         transaction_id: transaction.id,
         product_id: item.product_id,
@@ -102,14 +100,52 @@ export async function POST(request: NextRequest) {
         unit_price: parseFloat(item.unit_price),
         total_price: parseFloat(item.unit_price) * item.quantity,
         discount_amount: 0,
-        product_image:product.image_url || "not provided"
+        product_image: product.image_url || "not provided"
       }, { transaction: t });
 
+      // Get current stock before decrement
+      const currentStock = product.stock_quantity;
+      
       // Atomic decrement
       await product.decrement('stock_quantity', { 
         by: item.quantity, 
         transaction: t 
       });
+
+      // Refresh to get updated stock
+      await product.reload({ transaction: t });
+      const newStock = product.stock_quantity;
+
+      // Create StockLog for the sale
+      await StockLog.create({
+        product_id: item.product_id,
+        user_id: created_by,
+        change_amount: -item.quantity, // Negative for sales
+        reason: 'sale',
+        notes: `Sold ${item.quantity} units via transaction ${transaction.transaction_number}. Customer: ${customer_name || 'Walk-in'}. Cashier: ${userName}. Stock changed from ${currentStock} to ${newStock}.`
+      }, { transaction: t });
+
+      // Check if stock is now low (below min_stock_level) and create alert log
+      if (newStock < product.min_stock_level && newStock > 0) {
+        await StockLog.create({
+          product_id: item.product_id,
+          user_id: created_by,
+          change_amount: 0, // No change, just an alert
+          reason: 'adjustment',
+          notes: `LOW STOCK ALERT: ${product.name} is now below minimum stock level (${newStock} < ${product.min_stock_level}).`
+        }, { transaction: t });
+      }
+
+      // Check if stock is now zero
+      if (newStock === 0) {
+        await StockLog.create({
+          product_id: item.product_id,
+          user_id: created_by,
+          change_amount: 0, // No change, just an alert
+          reason: 'adjustment',
+          notes: `OUT OF STOCK: ${product.name} is now out of stock.`
+        }, { transaction: t });
+      }
     }
 
     await t.commit();
@@ -118,7 +154,8 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { 
         id: transaction.id, 
-        transaction_number: transaction.transaction_number 
+        transaction_number: transaction.transaction_number,
+        message: 'Transaction completed and stock logs created successfully.'
       }
     }, { status: 201 });
 
@@ -132,15 +169,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-
-
-
-
-
-
-
-
-
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -153,7 +181,7 @@ export async function GET(request: NextRequest) {
     const userId = decoded.id;
     const userRole = decoded.role;
 
-    // 2. PARSE QUERY PARAMETERS
+    // PARSE QUERY PARAMETERS
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -162,19 +190,15 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // 3. BUILD FILTER
+    // BUILD FILTER
     const where: any = {};
 
-    /** * ROLE-BASED ACCESS CONTROL
-     * Admin & Manager: See everything
-     * Cashier: See only their own transactions
-     */
+    // ROLE-BASED ACCESS CONTROL
     if (userRole !== 'admin' && userRole !== 'manager') {
       where.created_by = userId;
     }
 
     if (startDate && endDate) {
-      // Sets time to start and end of day for precise filtering
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
       const end = new Date(endDate);
@@ -183,7 +207,7 @@ export async function GET(request: NextRequest) {
       where.created_at = { [Op.between]: [start, end] };
     }
 
-    // 4. EXECUTE QUERY
+    // EXECUTE QUERY
     const { count, rows } = await Transaction.findAndCountAll({
       where,
       limit,

@@ -14,7 +14,8 @@ import {
   LayoutDashboard, 
   Receipt,
   BarChart3,
-  ShieldCheck
+  ShieldCheck,
+  Book
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
@@ -26,7 +27,8 @@ const menuItems = [
   { href: '/dashboard/transactions', icon: Receipt, label: 'Transactions', accent: 'text-indigo-500', bg: 'hover:bg-indigo-50' },
   { href: '/dashboard/users', icon: Users, label: 'Staff', accent: 'text-violet-500', bg: 'hover:bg-violet-50' },
   { href: '/dashboard/statistics', icon: BarChart3, label: 'Analytics', accent: 'text-blue-600', bg: 'hover:bg-blue-50' },
-  { href: '/dashboard/barcode-gen', icon: Settings, label: 'Barcode gen', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
+  { href: '/dashboard/barcode-gen', icon: Book, label: 'Barcodes', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
+  { href: '/dashboard/settings', icon: Settings, label: 'Settings', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
 ];
 
 interface SidebarProps {
@@ -83,7 +85,6 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={onClose}
                   className={`
                     group relative flex items-center justify-between px-4 py-3 rounded-[1.5rem] transition-all duration-300
                     ${isActive

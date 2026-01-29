@@ -139,21 +139,27 @@ export function DateRangePicker({
                 {formatDateRange(dateRange)}
               </span>
             </div>
-            <div className="flex items-center gap-1">
-              {dateRange && (
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
-                >
-                  <X className="h-3 w-3 text-slate-400" />
-                </button>
-              )}
-              <ChevronDown className={cn(
-                'h-4 w-4 text-slate-400 transition-transform',
-                isOpen && 'rotate-180'
-              )} />
-            </div>
+           <div className="flex items-center gap-1">
+                {dateRange && (
+                  <div
+                    onClick={handleClear}
+                    className="p-1 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        handleClear(e as any);
+                      }
+                    }}
+                  >
+                    <X className="h-3 w-3 text-slate-400" />
+                  </div>
+                )}
+                <ChevronDown className={cn(
+                  'h-4 w-4 text-slate-400 transition-transform',
+                  isOpen && 'rotate-180'
+                )} />
+              </div>
           </Button>
         </PopoverTrigger>
         <PopoverContent

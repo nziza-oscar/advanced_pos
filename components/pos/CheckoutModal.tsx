@@ -39,7 +39,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
             product_name: item.name,
             barcode: item.barcode,
             quantity: item.quantity,
-            unit_price: item.price
+            unit_price: item.unit_price
           })),
           subtotal: cart.subtotal,
           tax_amount: cart.taxAmount,

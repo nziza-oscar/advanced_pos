@@ -153,6 +153,32 @@ export default function AdminStatisticsPage() {
     fetchData(range);
   };
 
+  // Helper functions for colors
+const getCardBgClass = (index: number) => {
+  const gradients = [
+    'bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600',
+    'bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600',
+    'bg-gradient-to-br from-purple-600 via-purple-500 to-violet-600',
+    'bg-gradient-to-br from-rose-600 via-rose-500 to-pink-600',
+    'bg-gradient-to-br from-amber-600 via-amber-500 to-orange-600',
+    'bg-gradient-to-br from-sky-600 via-sky-500 to-cyan-600',
+  ];
+  return gradients[index % gradients.length];
+};
+
+const getIconBgClass = (index: number) => {
+  const iconBgs = [
+    'bg-white/20 text-white',
+    'bg-white/20 text-white',
+    'bg-white/20 text-white',
+    'bg-white/20 text-white',
+    'bg-white/20 text-white',
+    'bg-white/20 text-white',
+  ];
+  return iconBgs[index % iconBgs.length];
+};
+      
+
   if (loading || !data) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
@@ -293,7 +319,10 @@ const handleExportPDF = async () => {
             <button 
               onClick={() => handleExport('excel')}
               disabled={exporting}
-              className="flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-5 py-3 bg-blue-600
+               text-white rounded font-bold text-xs uppercase
+                tracking-widest hover:bg-blue-700 transition-all
+                 shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {exporting ? (
                 <>
@@ -303,7 +332,7 @@ const handleExportPDF = async () => {
               ) : (
                 <>
                   <FileSpreadsheet className="w-4 h-4" />
-                  Export Excel
+                  Export
                 </>
               )}
             </button>
@@ -338,24 +367,28 @@ const handleExportPDF = async () => {
 
       {/* Admin Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {adminMetrics.map((m) => (
-          <div key={m.label} className="bg-white p-7 rounded-[2.5rem] border border-blue-50/50 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
-            <div className={`w-12 h-12 ${m.bg} ${m.color} rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110`}>
-              <m.icon className="w-6 h-6 stroke-[1.5]" />
-            </div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{m.label}</p>
-            <div className="flex items-baseline gap-2">
-              <h4 className="text-2xl font-bold text-slate-800">{m.value}</h4>
-              {m.trend !== 0 && (
-                <span className={`text-[10px] font-bold flex items-center gap-0.5 ${getTrendColor(m.trend)}`}>
-                  {getTrendIcon(m.trend)}
-                  {formatTrend(m.trend)}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {adminMetrics.map((m, i) => (
+  <div key={m.label} className={`p-7 rounded-[2.5rem] border border-white/20 shadow-sm 
+  relative overflow-hidden group hover:shadow-md transition-all duration-300
+  ${getCardBgClass(i)}`}>
+    <div className={`w-12 h-12 ${getIconBgClass(i)} rounded-2xl flex items-center justify-center mb-5 
+    transition-transform group-hover:scale-110 duration-300`}>
+      <m.icon className="w-6 h-6 stroke-[1.5]" />
+    </div>
+    <p className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em] mb-1">{m.label}</p>
+    <div className="flex items-baseline gap-2">
+      <h4 className="text-2xl font-bold text-white">{m.value}</h4>
+      {m.trend !== 0 && (
+        <span className={`text-[10px] font-bold flex items-center gap-0.5 ${getTrendColor(m.trend)}`}>
+          {getTrendIcon(m.trend)}
+          {formatTrend(m.trend)}
+        </span>
+      )}
+    </div>
+  </div>
+))}
+
+</div>
 
       {/* Main Visuals Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -20,6 +20,8 @@ function generateTransactionNumber(): string {
 }
 
 export async function POST(request: NextRequest) {
+    const body = await request.json();
+
   const t = await sequelize.transaction();
 
   try {

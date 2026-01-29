@@ -62,9 +62,35 @@ export function AddProductModal() {
     }
   };
 
+  const checkAvailableBarcodes = async () => {
+  try {
+    const response = await fetch('/api/barcode/available');
+    const data = await response.json();
+    
+    if (data.success) {
+      if (data.data.available_count === 0) {
+        toast.error('No barcodes available. Please comminicate admin first.');
+        return false;
+      }
+      
+      if (data.data.warning_level) {
+        toast.warning(`Only ${data.data.available_count} barcodes available.`);
+      }
+      
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Failed to check barcodes:', error);
+    return false;
+  }
+};
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setLoading(true);
+ const hasBarcodes = await checkAvailableBarcodes();
+  if (!hasBarcodes) return;
     if (!formData.category_id) {
       toast.error("Please select a category");
       return;
@@ -78,8 +104,7 @@ export function AddProductModal() {
       return;
     }
 
-    setLoading(true);
-
+    
     try {
       const dataToSend = new FormData();
       dataToSend.append('name', formData.name);
@@ -101,9 +126,17 @@ export function AddProductModal() {
       if (data.success) {
         toast.success('Product added successfully!');
         handleClose();
-      } else {
-        toast.error(data.error || 'Failed to add product');
       }
+       else  if (!data.success && data.errorType === 'NO_BARCODES_AVAILABLE') {
+        // Show a more specific message with a link to generate barcodes
+        toast.error(
+          <div>
+            No barcodes available. 
+          </div>
+        );
+      }
+
+
     } catch (error) {
       toast.error('Something went wrong');
     } finally {

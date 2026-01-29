@@ -26,7 +26,7 @@ const menuItems = [
   { href: '/dashboard/transactions', icon: Receipt, label: 'Transactions', accent: 'text-indigo-500', bg: 'hover:bg-indigo-50' },
   { href: '/dashboard/users', icon: Users, label: 'Staff', accent: 'text-violet-500', bg: 'hover:bg-violet-50' },
   { href: '/dashboard/statistics', icon: BarChart3, label: 'Analytics', accent: 'text-blue-600', bg: 'hover:bg-blue-50' },
-  { href: '/dashboard/settings', icon: Settings, label: 'Global Settings', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
+  { href: '/dashboard/barcode-gen', icon: Settings, label: 'Barcode gen', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
 ];
 
 interface SidebarProps {

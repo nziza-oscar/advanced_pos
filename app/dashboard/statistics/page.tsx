@@ -14,11 +14,11 @@ import {
   FileSpreadsheet,
   PieChart,
   CreditCard,
-  Cash,
+  BookA,
   Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { SalesBarChart } from '@/components/charts/SalesBarChart';
+import { SalesBar } from '@/components/charts/SalesBar';
 import { DateRangePicker } from '@/components/shared/DateRangePicker';
 
 interface AdminStats {
@@ -62,6 +62,16 @@ interface DateRange {
   from: Date;
   to: Date;
 }
+
+// Format currency in FRW
+const formatCurrency = (amount: number) => {
+  return `FRW ${Number(amount).toLocaleString('en-RW')}`;
+};
+
+// Format number with commas (for quantities)
+const formatNumber = (num: number) => {
+  return num.toLocaleString('en-RW');
+};
 
 export default function AdminStatisticsPage() {
   const [data, setData] = useState<AdminStats | null>(null);
@@ -159,7 +169,7 @@ export default function AdminStatisticsPage() {
   const adminMetrics = [
     { 
       label: 'Total Revenue', 
-      value: `$${summary.revenue.toLocaleString()}`, 
+      value: formatCurrency(summary.revenue), // Changed from $ to FRW
       trend: summary.revenueChange, 
       icon: DollarSign, 
       color: 'text-blue-600', 
@@ -167,7 +177,7 @@ export default function AdminStatisticsPage() {
     },
     { 
       label: 'Avg. Order Value', 
-      value: `$${summary.avgOrderValue.toFixed(2)}`, 
+      value: formatCurrency(summary.avgOrderValue), // Changed from $ to FRW
       trend: summary.avgOrderChange, 
       icon: TrendingUp, 
       color: 'text-emerald-600', 
@@ -175,7 +185,7 @@ export default function AdminStatisticsPage() {
     },
     { 
       label: 'Total Transactions', 
-      value: summary.transactions.toLocaleString(), 
+      value: formatNumber(summary.transactions), // Just numbers
       trend: summary.transactionChange, 
       icon: ShoppingBag, 
       color: 'text-indigo-600', 
@@ -211,12 +221,58 @@ export default function AdminStatisticsPage() {
 
   const getPaymentMethodIcon = (method: string) => {
     switch(method.toLowerCase()) {
-      case 'cash': return <Cash className="w-4 h-4" />;
+      case 'cash': return <BookA className="w-4 h-4" />;
       case 'card': return <CreditCard className="w-4 h-4" />;
       case 'momo': return <DollarSign className="w-4 h-4" />;
       default: return <CreditCard className="w-4 h-4" />;
     }
   };
+
+
+const handleExportPDF = async () => {
+    setExporting(true);
+
+  try {
+    const queryParams = new URLSearchParams();
+    if (dateRange?.from) {
+      queryParams.set('startDate', dateRange.from.toISOString().split('T')[0]);
+    }
+    if (dateRange?.to) {
+      queryParams.set('endDate', dateRange.to.toISOString().split('T')[0]);
+    }
+    
+    const response = await fetch(`/api/admin/statistics/export/pdf?${queryParams}`);
+    
+    if (!response.ok) {
+      throw new Error('Failed to generate PDF');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `admin-report-${
+      dateRange?.from?.toISOString().split('T')[0] || 'latest'
+    }-to-${
+      dateRange?.to?.toISOString().split('T')[0] || 'now'
+    }.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    setExporting(false);
+    
+    toast.success('PDF report downloaded successfully');
+  } catch (error) {
+    setExporting(false);
+
+    console.error('Failed to export PDF:', error);
+    toast.error('Failed to export PDF report');
+  }
+};
+
+
+
 
   return (
     <div className="space-y-10 pb-10">
@@ -262,7 +318,7 @@ export default function AdminStatisticsPage() {
                 Export to Excel
               </button>
               <button 
-                onClick={() => handleExport('pdf')}
+                onClick={handleExportPDF}
                 className="w-full px-4 py-3 text-left hover:bg-blue-50 rounded-b-2xl flex items-center gap-2 text-sm font-medium text-slate-700"
               >
                 <FileSpreadsheet className="w-4 h-4 text-rose-600" />
@@ -320,13 +376,14 @@ export default function AdminStatisticsPage() {
                 newDate.setDate(newDate.getDate() - days);
                 handleDateChange({ from: newDate, to: new Date() });
               }}
+              defaultValue={30}
             >
               <option value="7">Last 7 days</option>
-              <option value="30" selected>Last 30 days</option>
+              <option value="30">Last 30 days</option>
               <option value="90">Last 90 days</option>
             </select>
           </div>
-          {data.hourly && <SalesBarChart data={data.hourly} />}
+          {data.hourly && <SalesBar data={data.hourly} />}
         </div>
 
         {/* Top Categories */}
@@ -350,7 +407,9 @@ export default function AdminStatisticsPage() {
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-slate-700">{cat.name}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-blue-600">${cat.revenue.toLocaleString()}</span>
+                      <span className="text-xs font-bold text-blue-600">
+                        {formatCurrency(cat.revenue)} {/* Changed from $ to FRW */}
+                      </span>
                       <span className={`text-[10px] font-bold ${cat.change > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {cat.change > 0 ? '+' : ''}{cat.change}%
                       </span>
@@ -380,7 +439,9 @@ export default function AdminStatisticsPage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-800">${pm.revenue?.toLocaleString() || '0'}</span>
+                    <span className="text-sm font-bold text-slate-800">
+                      {formatCurrency(pm.revenue)} {/* Changed from $ to FRW */}
+                    </span>
                     <span className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded-full">
                       {pm.percentage}%
                     </span>
@@ -444,7 +505,9 @@ export default function AdminStatisticsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-800">{product.quantity.toLocaleString()}</span>
+                      <span className="text-sm font-bold text-slate-800">
+                        {formatNumber(product.quantity)} {/* Just numbers */}
+                      </span>
                       <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
                         Units
                       </span>
@@ -452,12 +515,12 @@ export default function AdminStatisticsPage() {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-bold text-slate-800">
-                      ${product.revenue.toLocaleString()}
+                      {formatCurrency(product.revenue)} {/* Changed from $ to FRW */}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-medium text-slate-600">
-                      ${product.quantity > 0 ? (product.revenue / product.quantity).toFixed(2) : '0.00'}
+                      {formatCurrency(product.quantity > 0 ? product.revenue / product.quantity : 0)}
                     </span>
                   </td>
                 </tr>

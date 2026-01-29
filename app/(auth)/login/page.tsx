@@ -56,24 +56,17 @@ export default function LoginPage() {
     setShowPassword(!showPassword);
   };
 
-  // Quick login for demo
-  const handleDemoLogin = () => {
-    setFormData({
-      username: 'admin',
-      password: 'admin123',
-    });
-  };
-
   return (
-    <Card className="p-8 shadow-lg border-0">
-        <div className="text-center mb-8 ">
-            <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-            <p className="text-gray-600 mt-2">Sign in to your POS account</p>
-        </div>
+    <Card className=" shadow-none border-0 bg-background/60 backdrop-blur-sm rounded-none">
+      <div className="text-center mb-10">
+        <h1 className="text-3xl font-bold tracking-tighter uppercase text-primary ">Welcome Back</h1>
+        <div className="h-1 w-12 bg-primary mx-auto mt-2" />
+        <p className="text-muted-foreground mt-4 text-sm">Sign in to your POS account</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="username" className="text-sm font-medium">
+      <form onSubmit={handleSubmit} className="space-y-5  ">
+        <div className="space-y-3">
+          <Label htmlFor="username" className="text-xs font-bold uppercase tracking-widest">
             Username
           </Label>
           <Input
@@ -85,29 +78,21 @@ export default function LoginPage() {
             onChange={handleChange}
             required
             disabled={loading}
-            className="h-11"
+            className="h-12 bg-background rounded-none border-muted-foreground/20 focus-visible:ring-0 focus-visible:border-primary transition-all"
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <Label htmlFor="password" className="text-sm font-medium">
+            <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest">
               Password
             </Label>
             <button
               type="button"
               onClick={togglePasswordVisibility}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-xs text-muted-foreground hover:text-primary transition-colors uppercase font-semibold"
             >
-              {showPassword ? (
-                <span className="flex items-center gap-1">
-                  <EyeOff className="w-4 h-4" /> Hide
-                </span>
-              ) : (
-                <span className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" /> Show
-                </span>
-              )}
+              {showPassword ? 'Hide' : 'Show'}
             </button>
           </div>
           <div className="relative">
@@ -120,41 +105,38 @@ export default function LoginPage() {
               onChange={handleChange}
               required
               disabled={loading}
-              className="h-11 pr-10"
+              className="h-12 pr-10 bg-background rounded-none border-muted-foreground/20 focus-visible:ring-0 focus-visible:border-primary transition-all"
             />
           </div>
         </div>
 
         <Button 
           type="submit" 
-          className="w-full h-11 text-base" 
+          className="w-full h-14 text-sm font-bold uppercase tracking-widest rounded-none shadow-none" 
           disabled={loading}
         >
           {loading ? (
             <span className="flex items-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Signing in...
+              <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent animate-spin" />
+              Processing
             </span>
           ) : (
             <span className="flex items-center gap-2">
               <LogIn className="w-4 h-4" />
-              Sign In
+              Enter System
             </span>
           )}
         </Button>
-
-        
       </form>
 
-      
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Don't have an account?{' '}
+      <div className=" text-center border-t border-muted py-2">
+        <p className="text-xs text-muted-foreground uppercase tracking-tight">
+          New to the platform?{' '}
           <Link 
             href="/signup" 
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-bold text-primary hover:text-primary/80 transition-colors"
           >
-            Sign up here
+            Create Account
           </Link>
         </p>
       </div>

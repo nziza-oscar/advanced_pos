@@ -45,9 +45,6 @@ import {
   Filter, 
   Copy,
   QrCode,
-  CheckSquare,
-  Square,
-  Printer
 } from 'lucide-react';
 import { toast } from 'sonner';
 import JsBarcode from 'jsbarcode';
@@ -73,7 +70,7 @@ export default function BarcodeGenPage() {
   const [pagination, setPagination] = useState<PaginationData>({
     total: 0,
     page: 1,
-    limit: 20,
+    limit: 10,
     totalPages: 1
   });
   const [loading, setLoading] = useState(true);
@@ -172,30 +169,6 @@ export default function BarcodeGenPage() {
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
-  };
-
-  const exportToCSV = () => {
-    const headers = ['Barcode ID', 'Barcode', 'Status', 'Created At'];
-    const csvData = barcodes.map(b => [
-      b.barcode_id,
-      b.barcode,
-      b.status,
-      new Date(b.created_at).toLocaleDateString()
-    ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `barcodes-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success('CSV exported successfully');
   };
 
   const handleSelectBarcode = (id: string) => {
@@ -326,7 +299,7 @@ export default function BarcodeGenPage() {
             .barcode-info {
               margin: 20px 0;
               text-align: left;
-              display: inline-block;
+              display: block;
             }
             .barcode-info div {
               margin: 5px 0;
@@ -358,17 +331,15 @@ export default function BarcodeGenPage() {
               <img src="${canvas.toDataURL()}" style="max-width: 100%;" />
             </div>
             <div class="barcode-info">
-              <div><strong>Barcode:</strong> ${barcode.barcode}</div>
-              <div><strong>ID:</strong> #${barcode.barcode_id}</div>
               <div><strong>Status:</strong> ${barcode.status}</div>
-              <div><strong>Created:</strong> ${new Date(barcode.created_at).toLocaleDateString()}</div>
-            </div>
-            <button onclick="window.print()" class="print-btn">
+              <button onclick="window.print()" class="print-btn">
               <svg style="width:16px;height:16px;margin-right:8px;vertical-align:-2px;" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
               </svg>
               Print
             </button>
+            </div>
+            
           </div>
         </body>
         </html>
@@ -398,11 +369,6 @@ export default function BarcodeGenPage() {
               {downloading && '...'}
             </Button>
           )}
-          
-          <Button variant="outline" onClick={exportToCSV}>
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
           
           <Dialog open={generateOpen} onOpenChange={setGenerateOpen}>
             <DialogTrigger asChild>
@@ -520,6 +486,7 @@ export default function BarcodeGenPage() {
                   <TableRow>
                     <TableHead className="w-12">
                       <Checkbox
+                      className='border border-gray-600'
                         checked={selectAll}
                         onCheckedChange={handleSelectAll}
                       />
@@ -536,6 +503,7 @@ export default function BarcodeGenPage() {
                     <TableRow key={barcode.id} className="hover:bg-muted/50">
                       <TableCell>
                         <Checkbox
+                        className='border border-gray-600'
                           checked={selectedBarcodes.includes(barcode.id)}
                           onCheckedChange={() => handleSelectBarcode(barcode.id)}
                         />

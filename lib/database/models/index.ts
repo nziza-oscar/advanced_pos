@@ -7,6 +7,7 @@ import  User from './User';
 import Supplier from './Supplier';
 import StockLog from './StockLog';
 import Setting from './Setting';
+import Barcode from './Barcode';
 // Define associations
 Category.hasMany(Product, {
   foreignKey: 'category_id',
@@ -65,7 +66,7 @@ export {
   sequelize,
   Setting,
   Product,
-  // Supplier,
+  Barcode,
   StockLog,
   Category,
   Transaction,

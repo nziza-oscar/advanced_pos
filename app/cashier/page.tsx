@@ -17,7 +17,6 @@ export default function CashierPage() {
   const { addItem, items, updateQuantity, removeItem,totalAmount } = useCartStore();
   const {  itemsCount } = useCartSummary();
 
-  console.log(items)
 
   useEffect(() => {
     const fetchProducts = async () => {

@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Product, Category } from '@/lib/database/models';
 
+// Updated interface to reflect that params is now a Promise
 interface RouteParams {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 // GET single product
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    // Await the params before using them
+    const { id } = await params;
 
     const product = await Product.findByPk(id, {
       include: [{
@@ -34,8 +36,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         barcode: product.get('barcode'),
         name: product.get('name'),
         description: product.get('description'),
-        price: parseFloat(product.get('price')),
-        cost_price: product.get('cost_price') ? parseFloat(product.get('cost_price')) : null,
+        price: product.get('price'),
+        cost_price: product.get('cost_price') ? product.get('cost_price') : null,
         image_url: product.get('image_url'),
         category_id: product.get('category_id'),
         stock_quantity: product.get('stock_quantity'),
@@ -62,7 +64,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT update product
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const product = await Product.findByPk(id);
@@ -74,7 +76,6 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Update product
     await product.update({
       name: body.name || product.get('name'),
       description: body.description !== undefined ? body.description : product.get('description'),
@@ -93,7 +94,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       data: {
         id: product.get('id'),
         name: product.get('name'),
-        price: parseFloat(product.get('price')),
+        price: product.get('price'),
         stock_quantity: product.get('stock_quantity')
       }
     });
@@ -110,7 +111,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE product
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const product = await Product.findByPk(id);
 
@@ -121,7 +122,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Soft delete by setting is_active to false
     await product.update({ is_active: false });
 
     return NextResponse.json({

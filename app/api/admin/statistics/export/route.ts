@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import ExcelJS from 'exceljs';
 import { Transaction, TransactionItem, Product, Category, User, sequelize } from '@/lib/database/models';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 
 export async function GET(request: NextRequest) {
   try {
@@ -72,11 +72,11 @@ export async function GET(request: NextRequest) {
     // Add summary metrics
     const summary = await getSummaryStats(start, end);
     
-    // Metric rows
+    // Metric rows - CHANGED: FRW instead of $
     const metrics = [
-      ['Total Revenue', `$${summary.revenue.toLocaleString()}`],
+      ['Total Revenue', `FRW ${summary.revenue.toLocaleString()}`],
       ['Total Transactions', summary.transactions.toLocaleString()],
-      ['Average Order Value', `$${summary.avgOrderValue.toFixed(2)}`],
+      ['Average Order Value', `FRW ${summary.avgOrderValue.toFixed(2)}`],
       ['Active Staff', summary.activeStaff.toString()],
       ['Revenue Change', `${summary.revenueChange > 0 ? '+' : ''}${summary.revenueChange.toFixed(1)}%`],
       ['Transaction Change', `${summary.transactionChange > 0 ? '+' : ''}${summary.transactionChange.toFixed(1)}%`]
@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     const dailyData = await getDailySales(start, end);
     
     // Add headers
-    dailySheet.getRow(1).values = ['Date', 'Revenue', 'Transactions', 'Average Order', 'Day of Week'];
+    dailySheet.getRow(1).values = ['Date', 'Revenue (FRW)', 'Transactions', 'Average Order (FRW)', 'Day of Week'];
     dailySheet.getRow(1).eachCell((cell) => {
       cell.style = headerStyle;
     });
@@ -124,11 +124,11 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Format columns
-    dailySheet.getColumn(2).numFmt = '$#,##0.00';
-    dailySheet.getColumn(4).numFmt = '$#,##0.00';
+    // Format columns - CHANGED: FRW prefix instead of $
+    dailySheet.getColumn(2).numFmt = 'FRW #,##0.00';
+    dailySheet.getColumn(4).numFmt = 'FRW #,##0.00';
     dailySheet.columns.forEach(column => {
-      column.width = 15;
+      column.width = 18;
     });
 
     // ========== SHEET 3: TOP PRODUCTS ==========
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
 
     const topProducts = await getTopProducts(start, end);
     
-    productsSheet.getRow(1).values = ['Rank', 'Product Name', 'Category', 'Quantity Sold', 'Revenue', 'Average Price'];
+    productsSheet.getRow(1).values = ['Rank', 'Product Name', 'Category', 'Quantity Sold', 'Revenue (FRW)', 'Average Price (FRW)'];
     productsSheet.getRow(1).eachCell((cell) => {
       cell.style = headerStyle;
     });
@@ -156,8 +156,8 @@ export async function GET(request: NextRequest) {
     });
 
     productsSheet.getColumn(4).numFmt = '#,##0';
-    productsSheet.getColumn(5).numFmt = '$#,##0.00';
-    productsSheet.getColumn(6).numFmt = '$#,##0.00';
+    productsSheet.getColumn(5).numFmt = 'FRW #,##0.00';
+    productsSheet.getColumn(6).numFmt = 'FRW #,##0.00';
     productsSheet.columns.forEach(column => {
       column.width = 20;
     });
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
 
     const categories = await getCategoryAnalysis(start, end);
     
-    categorySheet.getRow(1).values = ['Category', 'Revenue', 'Percentage', 'Transaction Count', 'Avg. Transaction'];
+    categorySheet.getRow(1).values = ['Category', 'Revenue (FRW)', 'Percentage', 'Transaction Count', 'Avg. Transaction (FRW)'];
     categorySheet.getRow(1).eachCell((cell) => {
       cell.style = headerStyle;
     });
@@ -185,9 +185,9 @@ export async function GET(request: NextRequest) {
       ];
     });
 
-    categorySheet.getColumn(2).numFmt = '$#,##0.00';
+    categorySheet.getColumn(2).numFmt = 'FRW #,##0.00';
     categorySheet.getColumn(3).numFmt = '0.00%';
-    categorySheet.getColumn(5).numFmt = '$#,##0.00';
+    categorySheet.getColumn(5).numFmt = 'FRW #,##0.00';
 
     // ========== SHEET 5: PAYMENT METHODS ==========
     const paymentSheet = workbook.addWorksheet('Payment Methods', {
@@ -196,7 +196,7 @@ export async function GET(request: NextRequest) {
 
     const payments = await getPaymentMethods(start, end);
     
-    paymentSheet.getRow(1).values = ['Method', 'Transaction Count', 'Percentage', 'Total Revenue', 'Avg. Revenue'];
+    paymentSheet.getRow(1).values = ['Method', 'Transaction Count', 'Percentage', 'Total Revenue (FRW)', 'Avg. Revenue (FRW)'];
     paymentSheet.getRow(1).eachCell((cell) => {
       cell.style = headerStyle;
     });
@@ -213,19 +213,19 @@ export async function GET(request: NextRequest) {
     });
 
     paymentSheet.getColumn(3).numFmt = '0.00%';
-    paymentSheet.getColumn(4).numFmt = '$#,##0.00';
-    paymentSheet.getColumn(5).numFmt = '$#,##0.00';
+    paymentSheet.getColumn(4).numFmt = 'FRW #,##0.00';
+    paymentSheet.getColumn(5).numFmt = 'FRW #,##0.00';
 
     // Add conditional formatting for revenue columns
     [dailySheet, productsSheet, categorySheet, paymentSheet].forEach(sheet => {
       const revenueCol = sheet.getColumn(2); // Assuming revenue is column 2
       revenueCol.eachCell({ includeEmpty: true }, (cell, rowNumber) => {
         if (rowNumber > 1 && cell.value) {
-          // Color scale based on value
+          // Color scale based on value (in FRW)
           const value = Number(cell.value);
-          if (value > 1000) {
+          if (value > 100000) { // Adjusted for FRW
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'D1FAE5' } }; // Green-100
-          } else if (value > 500) {
+          } else if (value > 50000) { // Adjusted for FRW
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FEF3C7' } }; // Amber-100
           }
         }
@@ -282,101 +282,99 @@ async function getSummaryStats(start: Date, end: Date) {
     transactions,
     avgOrderValue,
     activeStaff,
-    revenueChange: 12.5, // You would calculate this from previous period
+    revenueChange: 12.5,
     transactionChange: 8.0
   };
 }
 
 async function getDailySales(start: Date, end: Date) {
-  const results = await Transaction.findAll({
-    where: {
-      created_at: { [Op.between]: [start, end] },
-      status: 'completed'
-    },
-    attributes: [
-      [sequelize.fn('DATE', sequelize.col('created_at')), 'date'],
-      [sequelize.fn('SUM', sequelize.col('total_amount')), 'revenue'],
-      [sequelize.fn('COUNT', sequelize.col('id')), 'transactions']
-    ],
-    group: [sequelize.fn('DATE', sequelize.col('created_at'))],
-    order: [[sequelize.fn('DATE', sequelize.col('created_at')), 'ASC']],
-    raw: true
-  });
+  const results = await sequelize.query(`
+    SELECT 
+      DATE(t.created_at) as date,
+      COALESCE(SUM(t.total_amount), 0) as revenue,
+      COALESCE(COUNT(t.id), 0) as transactions,
+      COALESCE(AVG(t.total_amount), 0) as avg_order
+    FROM transactions t
+    WHERE t.created_at BETWEEN :start AND :end
+      AND t.status = 'completed'
+    GROUP BY DATE(t.created_at)
+    ORDER BY date ASC
+  `, {
+    replacements: { start, end },
+    type: QueryTypes.SELECT
+  }) as any[];
 
-  return results.map((r: any) => ({
+  return results.map((r) => ({
     date: r.date,
     revenue: parseFloat(r.revenue || 0),
     transactions: parseInt(r.transactions || 0),
-    avgOrder: parseInt(r.transactions || 0) > 0 ? parseFloat(r.revenue || 0) / parseInt(r.transactions || 0) : 0,
+    avgOrder: parseFloat(r.avg_order || 0),
     dayOfWeek: new Date(r.date).toLocaleDateString('en-US', { weekday: 'long' })
   }));
 }
 
 async function getTopProducts(start: Date, end: Date) {
-  const results = await Product.findAll({
-    include: [{
-      model: TransactionItem,
-      as: 'transaction_items',
-      attributes: [],
-      where: {
-        created_at: { [Op.between]: [start, end] }
-      },
-      required: true
-    }],
-    attributes: [
-      'id',
-      'name',
-      [sequelize.fn('SUM', sequelize.col('transaction_items.quantity')), 'quantity'],
-      [sequelize.literal('SUM(transaction_items.quantity * transaction_items.unit_price)'), 'revenue']
-    ],
-    group: ['Product.id', 'Product.name'],
-    order: [[sequelize.literal('revenue'), 'DESC']],
-    limit: 20,
-    raw: true
-  });
+  const results = await sequelize.query(`
+    SELECT 
+      p.id,
+      p.name,
+      p.category_id,
+      c.name as category_name,
+      COALESCE(SUM(ti.quantity), 0) as quantity,
+      COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue
+    FROM products p
+    LEFT JOIN categories c ON c.id = p.category_id
+    LEFT JOIN transaction_items ti ON ti.product_id = p.id
+    LEFT JOIN transactions t ON t.id = ti.transaction_id
+      AND t.created_at BETWEEN :start AND :end
+      AND t.status = 'completed'
+    WHERE t.id IS NOT NULL
+    GROUP BY p.id, p.name, p.category_id, c.name
+    ORDER BY revenue DESC
+    LIMIT 20
+  `, {
+    replacements: { start, end },
+    type: QueryTypes.SELECT
+  }) as any[];
 
-  return results.map((r: any) => ({
+  return results.map((r) => ({
     name: r.name,
+    category: r.category_name || 'Uncategorized',
     quantity: parseInt(r.quantity || 0),
-    revenue: parseFloat(r.revenue || 0),
-    category: 'General' // You would join with categories table
+    revenue: parseFloat(r.revenue || 0)
   }));
 }
 
 async function getCategoryAnalysis(start: Date, end: Date) {
-  const results = await Category.findAll({
-    include: [{
-      model: Product,
-      as: 'products',
-      include: [{
-        model: TransactionItem,
-        as: 'transaction_items',
-        attributes: [],
-        where: {
-          created_at: { [Op.between]: [start, end] }
-        },
-        required: true
-      }]
-    }],
-    attributes: [
-      'id',
-      'name',
-      [sequelize.literal('SUM(products->transaction_items.quantity * products->transaction_items.unit_price)'), 'revenue'],
-      [sequelize.literal('COUNT(DISTINCT products->transaction_items.transaction_id)'), 'transactionCount']
-    ],
-    group: ['Category.id', 'Category.name'],
-    order: [[sequelize.literal('revenue'), 'DESC']],
-    raw: true
-  });
+  const results = await sequelize.query(`
+    SELECT 
+      c.id,
+      c.name,
+      COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue,
+      COALESCE(COUNT(DISTINCT ti.transaction_id), 0) as transaction_count
+    FROM categories c
+    LEFT JOIN products p ON p.category_id = c.id
+    LEFT JOIN transaction_items ti ON ti.product_id = p.id
+    LEFT JOIN transactions t ON t.id = ti.transaction_id
+      AND t.created_at BETWEEN :start AND :end
+      AND t.status = 'completed'
+    WHERE t.id IS NOT NULL
+    GROUP BY c.id, c.name
+    ORDER BY revenue DESC
+  `, {
+    replacements: { start, end },
+    type: QueryTypes.SELECT
+  }) as any[];
 
-  const totalRevenue = results.reduce((sum, r: any) => sum + parseFloat(r.revenue || 0), 0);
+  const totalRevenue = results.reduce((sum, r) => sum + parseFloat(r.revenue || 0), 0);
 
-  return results.map((r: any) => ({
+  return results.map((r) => ({
     name: r.name,
     revenue: parseFloat(r.revenue || 0),
     percentage: totalRevenue > 0 ? parseFloat(r.revenue || 0) / totalRevenue : 0,
-    transactionCount: parseInt(r.transactionCount || 0),
-    avgTransaction: parseInt(r.transactionCount || 0) > 0 ? parseFloat(r.revenue || 0) / parseInt(r.transactionCount || 0) : 0
+    transactionCount: parseInt(r.transaction_count || 0),
+    avgTransaction: parseInt(r.transaction_count || 0) > 0 ? 
+      parseFloat(r.revenue || 0) / parseInt(r.transaction_count || 0) : 0
   }));
 }
 

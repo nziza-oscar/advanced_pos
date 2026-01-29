@@ -1,252 +1,619 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ProductCard } from '@/components/pos/ProductCard';
-import { SearchBar } from '@/components/layout/SearchBar';
-import { useModalStore } from '@/lib/store/modal-store';
+import { useRouter } from 'next/navigation';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  ShoppingCart, Plus, Scan, 
-  TrendingUp, Wallet, Package, ArrowUpRight 
+import { Badge } from '@/components/ui/badge';
+import {
+  TrendingUp,
+  TrendingDown,
+  Users,
+  Package,
+  CreditCard,
+  ShoppingCart,
+  DollarSign,
+  BarChart3,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  RefreshCw,
+  ArrowRight,
+  QrCode,
+  Eye,
+  Receipt,
+  ShoppingBag
 } from 'lucide-react';
-import { useCartSummary } from '@/lib/store/cart-store';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
 
-interface Product {
-  id: string;
-  barcode: string;
-  name: string;
-  price: number;
-  image_url?: string;
-  stock_quantity: number;
-  is_active: boolean;
-}
-
-interface Stats {
-  todaySales: number;
-  totalIncome: number;
-  totalOrders: number;
-  lowStockItems: number;
-}
-
-export default function DashboardPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [stats, setStats] = useState<Stats>({
-    todaySales: 0,
-    totalIncome: 0,
-    totalOrders: 0,
-    lowStockItems: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const { openModal } = useModalStore();
-  const { itemsCount, totalAmount } = useCartSummary();
-
-  useEffect(() => {
-    fetchProducts();
-    fetchStats();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const response = await fetch('/api/stats/dashboard');
-      const data = await response.json();
-      if (data.success) setStats(data.data);
-    } catch (error) {
-      console.error('Failed to fetch stats');
-    }
+interface DashboardStats {
+  revenue: {
+    current: number;
+    previous: number;
+    change: number;
   };
+  transactions: {
+    current: number;
+    previous: number;
+    change: number;
+  };
+  avgOrderValue: number;
+  activeStaff: number;
+  lowStockItems: number;
+  pendingOrders: number;
+  topCategories: Array<{
+    name: string;
+    revenue: number;
+    change: number;
+  }>;
+  recentTransactions: Array<{
+    id: string;
+    transaction_number: string;
+    total_amount: number;
+    payment_method: string;
+    created_at: string;
+    status: string;
+  }>;
+}
 
-  const fetchProducts = async () => {
+interface InventoryAlert {
+  product_id: string;
+  product_name: string;
+  current_stock: number;
+  min_stock: number;
+  status: 'critical' | 'low' | 'warning';
+  barcode?: string;
+  category?: string;
+  percentage: number;
+}
+
+export default function AdminDashboardPage() {
+  const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('today');
+
+  const fetchData = async () => {
     try {
-      setLoading(true);
-      const response = await fetch('/api/products');
-      const data = await response.json();
-      if (data.success) setProducts(data.data || []);
+      setRefreshing(true);
+      const [dashboardRes, alertsRes] = await Promise.all([
+        fetch(`/api/admin/dashboard?range=${timeRange}`),
+        fetch('/api/admin/inventory/alerts')
+      ]);
+
+      const dashboardData = await dashboardRes.json();
+      const alertsData = await alertsRes.json();
+
+      if (dashboardData.success) setStats(dashboardData.data);
+      if (alertsData.success) setInventoryAlerts(alertsData.data);
+      
+      if (!dashboardData.success) {
+        toast.error('Failed to load dashboard data');
+      }
     } catch (error) {
-      toast.error('Failed to load products');
+      toast.error('Error loading dashboard data');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleQuickView = (product: Product) => openModal('checkout', { product });
-  const handleScanClick = () => openModal('scanner');
-  const handleAddProduct = () => openModal('add-product');
-  const handleCheckout = () => {
-    if (itemsCount === 0) {
-      toast.error('Cart is empty');
-      return;
-    }
-    openModal('payment');
+  useEffect(() => {
+    fetchData();
+  }, [timeRange]);
+
+  const handleRefresh = () => {
+    fetchData();
+    toast.info('Refreshing dashboard data...');
   };
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    product.barcode.includes(searchQuery)
-  );
+  const quickActions = [
+    {
+      title: 'Generate Barcodes',
+      description: 'Create new product barcodes',
+      icon: QrCode,
+      color: 'from-blue-500 to-blue-600',
+      iconColor: 'text-blue-100',
+      href: '/dashboard/barcode-gen',
+      action: () => router.push('/dashboard/barcode-gen')
+    },
+    {
+      title: 'View Reports',
+      description: 'Detailed sales analytics',
+      icon: BarChart3,
+      color: 'from-purple-500 to-purple-600',
+      iconColor: 'text-purple-100',
+      href: '/dashboard/statistics',
+      action: () => router.push('/dashboard/statistics')
+    },
+    {
+      title: 'Manage Inventory',
+      description: 'Update stock & products',
+      icon: Package,
+      color: 'from-emerald-500 to-emerald-600',
+      iconColor: 'text-emerald-100',
+      href: '/dashboard/inventory',
+      action: () => router.push('/dashboard/inventory')
+    },
+    {
+      title: 'Staff Management',
+      description: 'View & manage staff',
+      icon: Users,
+      color: 'from-amber-500 to-amber-600',
+      iconColor: 'text-amber-100',
+      href: '/dashboard/staff',
+      action: () => router.push('/dashboard/staff')
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="space-y-8 p-4 md:p-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">POS Dashboard</h1>
-          <p className="text-slate-500 text-sm">Overview of your business performance</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+          <p className="text-muted-foreground text-sm md:text-base">
+            Overview of business performance and management tools
+          </p>
         </div>
         
-        <div className="flex flex-wrap gap-3">
-          <Button onClick={handleScanClick} className="rounded-xl border-slate-200 shadow-sm">
-            <Scan className="w-4 h-4 mr-2" />
-            Scan Barcode
-          </Button>
-          <Button onClick={handleAddProduct} className="rounded-xl bg-slate-900 shadow-lg">
-            <Plus className="w-4 h-4 mr-2" />
-            Add Product
-          </Button>
-        </div>
-      </div>
-
-      {/* Financial Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Today's Sales" 
-          value={`${stats.todaySales.toLocaleString()} FRW`} 
-          icon={<TrendingUp className="w-5 h-5" />}
-          trend="+12.5%"
-          color="rose"
-        />
-        <StatCard 
-          title="Total Income" 
-          value={`${stats.totalIncome.toLocaleString()} FRW`} 
-          icon={<Wallet className="w-5 h-5" />}
-          trend="+4.2%"
-          color="emerald"
-        />
-        <StatCard 
-          title="Total Orders" 
-          value={stats.totalOrders.toString()} 
-          icon={<ShoppingCart className="w-5 h-5" />}
-          trend="+8.1%"
-          color="blue"
-        />
-        <StatCard 
-          title="Low Stock" 
-          value={stats.lowStockItems.toString()} 
-          icon={<Package className="w-5 h-5" />}
-          trend="Critical"
-          color="amber"
-          isWarning={stats.lowStockItems > 0}
-        />
-      </div>
-
-      {/* Cart Summary (Floating UI Style) */}
-      {itemsCount > 0 && (
-        <div className="bg-slate-900 text-white rounded-2xl shadow-2xl p-6 border border-white/10 ring-4 ring-slate-900/5 transition-all">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/10 rounded-xl">
-                <ShoppingCart className="w-6 h-6 text-orange-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg">Active Cart</h3>
-                <p className="text-slate-400 text-sm font-medium">
-                  {itemsCount} items selected • <span className="text-orange-400 font-bold">{totalAmount.toLocaleString()} FRW</span>
-                </p>
-              </div>
-            </div>
-            <Button onClick={handleCheckout} className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-8 h-12 font-bold shadow-lg shadow-orange-500/20">
-              Complete Checkout
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 mb-2 sm:mb-0">
+            <Button
+              variant={timeRange === 'today' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimeRange('today')}
+              className="flex-1 sm:flex-none"
+            >
+              Today
+            </Button>
+            <Button
+              variant={timeRange === 'week' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimeRange('week')}
+              className="flex-1 sm:flex-none"
+            >
+              This Week
+            </Button>
+            <Button
+              variant={timeRange === 'month' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setTimeRange('month')}
+              className="flex-1 sm:flex-none"
+            >
+              This Month
             </Button>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="w-full sm:w-auto"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
-      )}
-
-      {/* Search & Filter */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-2 shadow-sm">
-        <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search items by name, category, or scan barcode..."
-        />
       </div>
 
-      {/* Products Grid */}
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-slate-800 uppercase tracking-widest text-[11px]">
-            Inventory Catalog ({filteredProducts.length})
-          </h2>
-          {loading && <span className="text-xs font-bold text-slate-400 animate-pulse">Syncing...</span>}
-        </div>
+      {/* Quick Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        {/* Revenue Card - Emerald Gradient */}
+        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/90">Total Revenue</CardTitle>
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <DollarSign className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+              FRW {stats?.revenue.current.toLocaleString() || '0'}
+            </div>
+            <div className="flex items-center text-sm text-white/80 mt-2">
+              {stats?.revenue.change !== undefined && (
+                <>
+                  {stats.revenue.change >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-emerald-200 mr-1" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-rose-200 mr-1" />
+                  )}
+                  <span className={stats.revenue.change >= 0 ? 'text-emerald-100' : 'text-rose-100'}>
+                    {Math.abs(stats.revenue.change)}% from previous period
+                  </span>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {[...Array(10)].map((_, i) => (
-              <div key={i} className="bg-slate-50 rounded-2xl border border-slate-100 h-72 animate-pulse" />
-            ))}
+        {/* Transactions Card - Blue Gradient */}
+        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/90">Transactions</CardTitle>
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <ShoppingCart className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+              {stats?.transactions.current || 0}
+            </div>
+            <div className="flex items-center text-sm text-white/80 mt-2">
+              {stats?.transactions.change !== undefined && (
+                <>
+                  {stats.transactions.change >= 0 ? (
+                    <TrendingUp className="h-4 w-4 text-blue-200 mr-1" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-rose-200 mr-1" />
+                  )}
+                  <span className={stats.transactions.change >= 0 ? 'text-blue-100' : 'text-rose-100'}>
+                    {Math.abs(stats.transactions.change)}% change
+                  </span>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Avg Order Value Card - Purple Gradient */}
+        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 via-purple-600 to-violet-600" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/90">Avg Order Value</CardTitle>
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <CreditCard className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+              FRW {stats?.avgOrderValue?.toFixed(2) || '0.00'}
+            </div>
+            <p className="text-sm text-white/80 mt-2">
+              Per completed transaction
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Active Staff Card - Amber Gradient */}
+        <Card className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-amber-600 to-orange-600" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+          <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-white/90">Active Staff</CardTitle>
+            <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+              {stats?.activeStaff || 0}
+            </div>
+            <p className="text-sm text-white/80 mt-2">
+              Logged in this week
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Quick Actions & Alerts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Quick Actions</CardTitle>
+                <CardDescription>Common admin tasks</CardDescription>
+              </div>
+              <Badge variant="outline" className="text-xs">
+                {quickActions.length} actions
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {quickActions.map((action) => (
+                <button
+                  key={action.title}
+                  onClick={action.action}
+                  className="group relative flex flex-col items-center justify-center p-6 border rounded-xl hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${action.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300 rounded-xl`} />
+                  <div className={`p-3 bg-gradient-to-br ${action.color} rounded-xl mb-3 group-hover:scale-110 transition-transform duration-300`}>
+                    <action.icon className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="font-semibold text-center">{action.title}</h3>
+                  <p className="text-sm text-muted-foreground text-center mt-1">
+                    {action.description}
+                  </p>
+                  <ArrowRight className="absolute right-4 top-4 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Inventory Alerts */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Inventory Alerts</CardTitle>
+                <CardDescription>Products needing attention</CardDescription>
+              </div>
+              <Badge variant={inventoryAlerts.length > 0 ? "destructive" : "secondary"}>
+                {inventoryAlerts.length}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {inventoryAlerts.length > 0 ? (
+              <div className="space-y-3">
+                {inventoryAlerts.slice(0, 5).map((alert) => (
+                  <div
+                    key={alert.product_id}
+                    className="group flex items-center justify-between p-3 border rounded-lg hover:border-destructive/50 hover:bg-destructive/5 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/dashboard/inventory?product=${alert.product_id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{alert.product_name}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs">
+                          Stock: {alert.current_stock}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Min: {alert.min_stock}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {alert.percentage}%
+                        </span>
+                      </div>
+                    </div>
+                    <Badge variant={
+                      alert.status === 'critical' ? 'destructive' :
+                      alert.status === 'low' ? 'default' : 'secondary'
+                    } className="ml-2">
+                      {alert.status}
+                    </Badge>
+                    <ArrowRight className="ml-2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                ))}
+                {inventoryAlerts.length > 5 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => router.push('/dashboard/inventory?filter=low-stock')}
+                  >
+                    View all {inventoryAlerts.length} alerts
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">All inventory levels are optimal</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => router.push('/dashboard/inventory')}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Inventory
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Transactions & Top Categories */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Transactions */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Recent Transactions</CardTitle>
+                <CardDescription>Latest completed orders</CardDescription>
+              </div>
+              <Badge variant="outline">
+                {stats?.recentTransactions?.length || 0} recent
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats?.recentTransactions && stats.recentTransactions.length > 0 ? (
+              <div className="space-y-3">
+                {stats.recentTransactions.slice(0, 5).map((transaction) => (
+                  <div
+                    key={transaction.id}
+                    className="group flex items-center justify-between p-3 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer"
+                    onClick={() => router.push(`/dashboard/transactions/${transaction.id}`)}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                        <p className="font-medium text-sm truncate">{transaction.transaction_number}</p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="outline" className="text-xs capitalize">
+                          {transaction.payment_method}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {format(new Date(transaction.created_at), 'MMM d, h:mm a')}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-sm">FRW {transaction.total_amount.toLocaleString()}</p>
+                      <Badge 
+                        variant={transaction.status === 'completed' ? 'default' : 'secondary'} 
+                        className="text-xs mt-1"
+                      >
+                        {transaction.status}
+                      </Badge>
+                    </div>
+                    <ArrowRight className="ml-2 h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => router.push('/dashboard/transactions')}
+                >
+                  View all transactions
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No recent transactions</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => router.push('/dashboard/transactions')}
+                >
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  View Transactions
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Categories */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Top Categories</CardTitle>
+                <CardDescription>Revenue by product category</CardDescription>
+              </div>
+              <Badge variant="outline">
+                {stats?.topCategories?.length || 0} categories
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {stats?.topCategories && stats.topCategories.length > 0 ? (
+              <div className="space-y-4">
+                {stats.topCategories.map((category, index) => (
+                  <div 
+                    key={category.name} 
+                    className="group space-y-2 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                    onClick={() => router.push(`/dashboard/inventory?category=${category.name}`)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${
+                          index === 0 ? 'bg-emerald-500' :
+                          index === 1 ? 'bg-blue-500' :
+                          index === 2 ? 'bg-purple-500' : 'bg-muted-foreground'
+                        }`} />
+                        <span className="font-medium">{category.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">FRW {category.revenue.toLocaleString()}</span>
+                        <div className={`flex items-center text-xs ${
+                          category.change >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {category.change >= 0 ? (
+                            <TrendingUp className="h-3 w-3 mr-1" />
+                          ) : (
+                            <TrendingDown className="h-3 w-3 mr-1" />
+                          )}
+                          {Math.abs(category.change)}%
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 flex-1 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            index === 0 ? 'bg-emerald-500' :
+                            index === 1 ? 'bg-blue-500' :
+                            index === 2 ? 'bg-purple-500' : 'bg-muted-foreground'
+                          }`}
+                          style={{
+                            width: `${Math.min((category.revenue / (stats.topCategories[0]?.revenue || 1)) * 100, 100)}%`
+                          }}
+                        />
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No category data available</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* System Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            System Status
+          </CardTitle>
+          <CardDescription>Current system health and metrics</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors">
+              <p className="text-sm font-medium text-muted-foreground">Pending Orders</p>
+              <p className="text-2xl font-bold mt-1">{stats?.pendingOrders || 0}</p>
+            </div>
+            <div className="p-4 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors">
+              <p className="text-sm font-medium text-muted-foreground">Low Stock Items</p>
+              <p className="text-2xl font-bold mt-1">{stats?.lowStockItems || 0}</p>
+            </div>
+            <div className="p-4 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors">
+              <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
+              <p className="text-2xl font-bold mt-1">-</p>
+            </div>
+            <div className="p-4 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors">
+              <p className="text-sm font-medium text-muted-foreground">System Health</p>
+              <p className="text-2xl font-bold mt-1 text-green-600">Good</p>
+            </div>
           </div>
-        ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onQuickView={handleQuickView}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState onAdd={handleAddProduct} hasSearch={!!searchQuery} />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ title, value, icon, trend, color, isWarning }: any) {
-  const colors: any = {
-    rose: "bg-rose-50 text-rose-600 border-rose-100",
-    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    amber: "bg-amber-50 text-amber-600 border-amber-100",
-  };
-
-  return (
-    <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <div className={`p-2.5 rounded-xl border ${colors[color]}`}>
-          {icon}
-        </div>
-        <div className={`flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${isWarning ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
-          {trend}
-          {!isWarning && <ArrowUpRight className="w-3 h-3" />}
-        </div>
-      </div>
-      <div>
-        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">{title}</p>
-        <h3 className="text-xl font-black text-slate-900 tracking-tight">{value}</h3>
-      </div>
-    </div>
-  );
-}
-
-function EmptyState({ onAdd, hasSearch }: any) {
-  return (
-    <div className="text-center py-20 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-      <div className="bg-white w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4 border border-slate-100 text-slate-400">
-        <Package className="w-8 h-8" />
-      </div>
-      <h3 className="text-lg font-bold text-slate-900 mb-1">
-        {hasSearch ? 'No products match' : 'Your shelf is empty'}
-      </h3>
-      <p className="text-slate-500 text-sm mb-6 max-w-xs mx-auto font-medium">
-        {hasSearch ? 'Try adjusting your filters or search keywords' : 'Start growing your business by adding your first product'}
-      </p>
-      <Button onClick={onAdd} className="rounded-xl bg-slate-900 px-6 font-bold">
-        Add Your First Product
-      </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -29,7 +29,6 @@ export function TransactionDetailModal({
   onClose: () => void 
 }) {
   if (!transaction) return null;
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -103,7 +102,7 @@ export function TransactionDetailModal({
                 <TableBody>
                   {transaction.items?.map((item: any) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.product_name}</TableCell>
+                      <TableCell className="font-medium">{item?.product?.name}</TableCell>
                       <TableCell className="text-center">{item.quantity}</TableCell>
                       <TableCell className="text-right">{Number(item.unit_price).toLocaleString()} FRW</TableCell>
                       <TableCell className="text-right font-bold">{Number(item.total_price).toLocaleString()} FRW</TableCell>

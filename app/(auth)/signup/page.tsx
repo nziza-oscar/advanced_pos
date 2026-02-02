@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { Eye, EyeOff, UserPlus, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, ShieldCheck, Mail, User } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 
 export default function SignupPage() {
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,6 @@ export default function SignupPage() {
 
       if (data.success) {
         toast.success('Account created successfully!');
-        // Auto login after signup
         const loginResponse = await fetch('/api/auth/signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -69,141 +69,125 @@ export default function SignupPage() {
     });
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
   return (
-    <Card className="p-8 shadow-lg border-0">
-      
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="full_name" className="text-sm font-medium">
-              Full Name *
-            </Label>
-            <Input
-              id="full_name"
-              name="full_name"
-              type="text"
-              placeholder="John Doe"
-              value={formData.full_name}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              className="h-11"
-            />
+    <div className="min-h-screen bg-[#F8FAFF] flex items-center justify-center p-6">
+      <div className="w-full max-w-[550px] space-y-8">
+        {/* Branding */}
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="w-16 h-16 bg-white rounded-[2rem] shadow-sm flex items-center justify-center border border-blue-50 mb-2">
+            <Logo className="h-8 text-blue-600" />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="username" className="text-sm font-medium">
-              Username *
-            </Label>
-            <Input
-              id="username"
-              name="username"
-              type="text"
-              placeholder="johndoe"
-              value={formData.username}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              className="h-11"
-            />
-          </div>
+          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Create Account</h1>
+          <p className="text-slate-400 font-medium text-sm">Join our POS system and start managing today.</p>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-sm font-medium">
-            Email *
-          </Label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="john@example.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            disabled={loading}
-            className="h-11"
-          />
-        </div>
+        <Card className="p-8 md:p-10 rounded-[3rem] shadow-[0_20px_50px_-20px_rgba(59,130,246,0.1)] border-0 bg-white">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <Label htmlFor="full_name" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                  Full Name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
+                  <Input
+                    id="full_name"
+                    name="full_name"
+                    placeholder="John Doe"
+                    value={formData.full_name}
+                    onChange={handleChange}
+                    required
+                    className="h-12 pl-11 rounded-2xl bg-slate-50 border-none focus-visible:ring-2 focus-visible:ring-blue-100 transition-all"
+                  />
+                </div>
+              </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <Label htmlFor="password" className="text-sm font-medium">
-              Password *
-            </Label>
-            <button
-              type="button"
-              onClick={togglePasswordVisibility}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  name="username"
+                  placeholder="johndoe"
+                  value={formData.username}
+                  onChange={handleChange}
+                  required
+                  className="h-12 px-5 rounded-2xl bg-slate-50 border-none focus-visible:ring-2 focus-visible:ring-blue-100 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                Email Address
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="h-12 pl-11 rounded-2xl bg-slate-50 border-none focus-visible:ring-2 focus-visible:ring-blue-100 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center ml-1">
+                <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  Password
+                </Label>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-[10px] font-bold uppercase text-blue-500 hover:text-blue-600 tracking-tighter"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+              <div className="relative">
+                <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-400" />
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="h-12 pl-11 rounded-2xl bg-slate-50 border-none focus-visible:ring-2 focus-visible:ring-blue-100 transition-all"
+                />
+              </div>
+            </div>
+
+            <Button 
+              type="submit" 
+              className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-widest text-xs shadow-lg shadow-blue-100 transition-all active:scale-95 mt-4" 
+              disabled={loading}
             >
-              {showPassword ? (
-                <span className="flex items-center gap-1">
-                  <EyeOff className="w-4 h-4" /> Hide
-                </span>
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                <span className="flex items-center gap-1">
-                  <Eye className="w-4 h-4" /> Show
+                <span className="flex items-center gap-2">
+                  Get Started <UserPlus className="w-4 h-4" />
                 </span>
               )}
-            </button>
-          </div>
-          <div className="relative">
-            <Input
-              id="password"
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              className="h-11 pr-10"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Minimum 6 characters
-            </p>
-          </div>
-        </div>
+            </Button>
+          </form>
+        </Card>
 
-        <div className="flex flex-col sm:flex-row gap-3 pt-4">
-          <Button 
-            type="submit" 
-            className="flex-1 h-11 text-base" 
-            disabled={loading}
-          >
-            {loading ? (
-              <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Creating account...
-              </span>
-            ) : (
-              <span className="flex items-center gap-2">
-                <UserPlus className="w-4 h-4" />
-                Create Account
-              </span>
-            )}
-          </Button>
-
-         
-        </div>
-      </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link 
-            href="/login" 
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
-            Sign in here
+        <p className="text-center text-sm font-medium text-slate-400">
+          Already a member?{' '}
+          <Link href="/login" className="text-blue-600 hover:underline">
+            Sign in to your account
           </Link>
         </p>
       </div>
-    </Card>
+    </div>
   );
 }

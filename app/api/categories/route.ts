@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Category from '@/lib/database/models/Category'; // Adjust path to your model
-import { Product } from '@/lib/database/models'; // To count products
+import Category from '@/lib/database/models/Category'; 
+import { Product } from '@/lib/database/models'; 
 import sequelize from '@/lib/database/connection';
 
 export async function GET() {
   try {
-    // Fetch categories with a count of associated products
     const categories = await Category.findAll({
       attributes: {
         include: [

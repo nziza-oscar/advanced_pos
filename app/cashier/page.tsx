@@ -13,7 +13,8 @@ export default function CashierPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [open,setOpen] = useState(false)
   
-  // Destructure store actions
+  // Destructure store 
+  
   const { addItem, items, updateQuantity, removeItem,totalAmount } = useCartStore();
   const {  itemsCount } = useCartSummary();
 
@@ -46,14 +47,12 @@ export default function CashierPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input 
               placeholder="Search by name or scan barcode..." 
-              className="pl-10 h-12 bg-white rounded-2xl border-none shadow-sm focus:ring-2 focus:ring-blue-500"
+              className="pl-10 h-12 bg-white rounded-xl border border-slate-400 shadow-sm focus:ring-2 focus:ring-blue-500"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="h-12 w-12 rounded-2xl bg-white border-none shadow-sm">
-            <Filter className="w-4 h-4" />
-          </Button>
+         
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2">
@@ -86,7 +85,7 @@ export default function CashierPage() {
       {/* 2. Order Summary Zone (Right) */}
       <div className="lg:col-span-4 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden">
         <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <h2 className="text-lg font-bold text-primary flex items-center gap-2">
             <ReceiptText className="w-5 h-5 text-blue-500" /> Current Order
           </h2>
           <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase">
@@ -165,10 +164,9 @@ export default function CashierPage() {
           <Button 
             disabled={itemsCount === 0}
             onClick={()=>setOpen(true)}
-            className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-100 text-lg gap-3"
+            className='w-full'
           >
-            Checkout (Pay Now)
-            <Plus className="w-5 h-5" />
+            Checkout
           </Button>
         </div>
       </div>

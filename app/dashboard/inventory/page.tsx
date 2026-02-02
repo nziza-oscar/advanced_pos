@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Package, Plus, Search } from 'lucide-react';
 import { useModalStore } from '@/lib/store/modal-store';
+import Link from 'next/link';
 
 interface Product {
   id: string;
@@ -90,9 +91,11 @@ export default function InventoryPage() {
                 {lowStockProducts.length} product{lowStockProducts.length !== 1 ? 's' : ''} need{lowStockProducts.length === 1 ? 's' : ''} restocking
               </p>
             </div>
-            <Button variant="outline" size="sm">
+           <Link href="/dashboard/products" className="text-yellow-600 hover:text-yellow-700">
+           <Button variant="outline" size="sm">
               View All
             </Button>
+           </Link>
           </div>
         </div>
       )}
@@ -130,7 +133,6 @@ export default function InventoryPage() {
                   <TableHead>Current Stock</TableHead>
                   <TableHead>Min Level</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -155,11 +157,7 @@ export default function InventoryPage() {
                         {getStockStatus(product.stock_quantity, product.min_stock_level)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">
-                        Restock
-                      </Button>
-                    </TableCell>
+                  
                   </TableRow>
                 ))}
               </TableBody>

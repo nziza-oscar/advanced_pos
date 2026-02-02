@@ -86,11 +86,11 @@ export default function CategoriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
-          <p className="text-slate-500">Manage and organize your product groups</p>
+          <h1 className="text-2xl font-bold text-primary">Categories</h1>
+          <p className="text-slate-500 text-sm">Manage and organize your product groups</p>
         </div>
         
-        <Button onClick={() => openModal('add-category')} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => openModal('add-category')} >
           <Plus className="w-4 h-4 mr-2" />
           Add Category
         </Button>

@@ -11,11 +11,11 @@ export async function GET() {
           [
             sequelize.literal(`(
                 SELECT COUNT(*)
-                FROM "products" AS "product"
-                WHERE "product"."category_id" = "Category"."id"
+                FROM \`products\` AS \`product\`
+                WHERE \`product\`.\`category_id\` = \`Category\`.\`id\`
             )`),
             'product_count'
-            ]
+          ]
         ]
       },
       order: [['name', 'ASC']]

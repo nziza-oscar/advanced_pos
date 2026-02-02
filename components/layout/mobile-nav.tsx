@@ -18,7 +18,7 @@ export function MobileNav() {
   const { openScannerModal } = useScannerModal();
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-slate-200 px-6 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-primary backdrop-blur-lg border-t border-slate-200 px-6 py-3 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
       <div className="flex justify-between items-center max-w-md mx-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
@@ -26,12 +26,12 @@ export function MobileNav() {
           // Define the shared styles for Icon wrapper and Text
           const iconWrapperClass = cn(
             "p-2 rounded-2xl transition-all duration-200",
-            isActive ? "bg-blue-600 text-white shadow-lg shadow-blue-100" : "text-slate-400 group-hover:text-slate-600"
+            isActive ? "bg-blue-600 text-white shadow-sm" : "text-slate-400 group-hover:text-slate-600"
           );
 
           const labelClass = cn(
             "text-[10px] font-bold uppercase tracking-wider",
-            isActive ? "text-blue-600" : "text-slate-400"
+            isActive ? "text-blue-200" : "text-slate-400"
           );
 
           // Render as a Button if isButton is true

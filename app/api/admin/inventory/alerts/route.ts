@@ -1,14 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Product, Category } from '@/lib/database/models';
 import { Op } from 'sequelize';
-import  sequelize from "@/lib/database/connection"
+import sequelize from "@/lib/database/connection";
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const threshold = parseFloat(searchParams.get('threshold') || '0.5'); // 50% of min stock
-
-    // Get products with low stock
     const lowStockProducts = await Product.findAll({
       include: [{
         model: Category,
@@ -17,8 +13,9 @@ export async function GET(request: NextRequest) {
       }],
       where: {
         is_active: true,
-        stock_quantity: {
-          [Op.lte]: sequelize.literal(`min_stock_level * ${threshold}`)
+        // Condition: min_stock_level >= stock_quantity
+        min_stock_level: {
+          [Op.gte]: sequelize.col('stock_quantity')
         }
       },
       attributes: [
@@ -32,12 +29,13 @@ export async function GET(request: NextRequest) {
     });
 
     const alerts = lowStockProducts.map(product => {
-      const percentage = (product.stock_quantity / product.min_stock_level) * 100;
+      const { stock_quantity: currentStock, min_stock_level: minStock } = product;
       
       let status: 'critical' | 'low' | 'warning';
-      if (percentage <= 20) {
+      
+      if (currentStock <= 0 || currentStock <= minStock * 0.25) {
         status = 'critical';
-      } else if (percentage <= 50) {
+      } else if (currentStock <= minStock * 0.75) {
         status = 'low';
       } else {
         status = 'warning';
@@ -47,16 +45,16 @@ export async function GET(request: NextRequest) {
         product_id: product.id,
         product_name: product.name,
         barcode: product.barcode,
-        current_stock: product.stock_quantity,
-        min_stock: product.min_stock_level,
-        percentage: parseFloat(percentage.toFixed(1)),
+        current_stock: currentStock,
+        min_stock: minStock,
         status,
-        category:  'Uncategorized'
+        category: (product as any).category?.name || 'Uncategorized'
       };
     });
 
     return NextResponse.json({
       success: true,
+      count: alerts.length,
       data: alerts
     });
 

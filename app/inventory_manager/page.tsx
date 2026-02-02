@@ -20,6 +20,7 @@ import {
 import Link from 'next/link';
 import { useModalStore } from '@/lib/store/modal-store';
 import { AddProductModal } from '@/components/products/AddProductModal';
+import { Button } from '@/components/ui/button';
 
 export default function InventoryManagerPage() {
   const [data, setData] = useState<any>(null);
@@ -89,8 +90,9 @@ export default function InventoryManagerPage() {
       label: 'Total Products', 
       value: data.totalProducts.toLocaleString(), 
       icon: Package, 
-      color: 'text-blue-500', 
-      bg: 'bg-blue-50',
+      color: 'text-blue-600', 
+      bg: 'bg-blue-100',
+      border: 'border-blue-200',
       change: '+5.2%',
       changeType: 'increase'
     },
@@ -98,8 +100,9 @@ export default function InventoryManagerPage() {
       label: 'Low Stock Items', 
       value: data.lowStockCount, 
       icon: AlertTriangle, 
-      color: 'text-amber-500', 
-      bg: 'bg-amber-50',
+      color: 'text-amber-600', 
+      bg: 'bg-amber-100',
+      border: 'border-amber-200',
       change: data.lowStockChange > 0 ? `+${data.lowStockChange}` : `${data.lowStockChange}`,
       changeType: data.lowStockChange > 0 ? 'increase' : 'decrease'
     },
@@ -107,17 +110,20 @@ export default function InventoryManagerPage() {
       label: 'Out of Stock', 
       value: data.outOfStockCount, 
       icon: Boxes, 
-      color: 'text-rose-500', 
-      bg: 'bg-rose-50',
+      color: 'text-rose-600', 
+      bg: 'bg-rose-100',
+      border: 'border-rose-200',
       change: data.outOfStockChange > 0 ? `+${data.outOfStockChange}` : `${data.outOfStockChange}`,
       changeType: data.outOfStockChange > 0 ? 'increase' : 'decrease'
     },
     { 
       label: 'Stock Value', 
-      value: `$${data.totalStockValue.toLocaleString()}`,
+      // Updated to FRW
+      value: `${data.totalStockValue.toLocaleString()} FRW`,
       icon: TrendingUp, 
-      color: 'text-emerald-500', 
-      bg: 'bg-emerald-50',
+      color: 'text-emerald-600', 
+      bg: 'bg-emerald-100',
+      border: 'border-emerald-200',
       change: '+12.5%',
       changeType: 'increase'
     },
@@ -125,8 +131,9 @@ export default function InventoryManagerPage() {
       label: 'Categories', 
       value: data.categoryCount, 
       icon: Boxes, 
-      color: 'text-indigo-500', 
-      bg: 'bg-indigo-50',
+      color: 'text-indigo-600', 
+      bg: 'bg-indigo-100',
+      border: 'border-indigo-200',
       change: '+2',
       changeType: 'increase'
     },
@@ -134,13 +141,13 @@ export default function InventoryManagerPage() {
       label: 'Monthly Movements', 
       value: data.monthlyMovements.toLocaleString(), 
       icon: RefreshCw, 
-      color: 'text-purple-500', 
-      bg: 'bg-purple-50',
+      color: 'text-purple-600', 
+      bg: 'bg-purple-100',
+      border: 'border-purple-200',
       change: '+8.3%',
       changeType: 'increase'
     },
   ];
-
   const quickActions = [
     { 
       title: 'Add Product', 
@@ -149,24 +156,14 @@ export default function InventoryManagerPage() {
       href: null,
       onClick: () => openModal('add-product')
     },
-    { 
-      title: 'Bulk Restock', 
-      icon: Package, 
-      color: 'bg-emerald-500 hover:bg-emerald-600',
-      href: '/inventory-manager/restock'
-    },
+    
     { 
       title: 'View Reports', 
       icon: BarChart3, 
       color: 'bg-purple-500 hover:bg-purple-600',
       href: '/inventory-manager/reports'
     },
-    { 
-      title: 'Import Products', 
-      icon: Upload, 
-      color: 'bg-amber-500 hover:bg-amber-600',
-      href: '/inventory-manager/import'
-    },
+
   ];
 
   return (
@@ -175,7 +172,7 @@ export default function InventoryManagerPage() {
         {/* Header with Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Inventory Overview</h1>
+            <h1 className="text-3xl font-bold text-primary tracking-tight">Inventory Overview</h1>
             <p className="text-slate-400 font-medium">Monitor stock levels, track movements, and manage inventory.</p>
           </div>
           <div className="flex items-center gap-3">
@@ -186,12 +183,11 @@ export default function InventoryManagerPage() {
               <RefreshCw className="w-4 h-4" />
               Refresh
             </button>
-            <button
+            <Button
               onClick={() => openModal('add-product')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-2xl font-semibold hover:bg-blue-700 transition-colors"
             >
-              + Add Product
-            </button>
+               Add Product
+            </Button>
             <button
               onClick={handleExportReport}
               className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
@@ -202,9 +198,36 @@ export default function InventoryManagerPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {quickActions.map((action) => (
+      
+
+        {/* Inventory Metrics - Read-only display */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+  {inventoryMetrics.map((metric) => (
+    <div
+      key={metric.label}
+      // Using rounded-xl and more saturated background colors
+      className={`p-5 rounded-xl border-2 transition-all hover:scale-[1.02] ${metric.bg} ${metric.border}`}
+    >
+      
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 bg-white rounded-xl shadow-md flex items-center justify-center">
+          <metric.icon className={`w-5 h-5 stroke-[2.5] ${metric.color}`} />
+        </div>
+      </div>
+      <div>
+        <p className="text-[11px] font-black text-slate-800/70 uppercase tracking-widest mb-1">
+          {metric.label}
+        </p>
+        <h4 className="text-xl font-black text-slate-900 tracking-tight">
+          {/* Displaying value in FRW */}
+          {metric.isCurrency ? `${metric.value.toLocaleString()} FRW` : metric.value}
+        </h4>
+      </div>
+ 
+    </div>
+  ))}
+
+{quickActions.map((action) => (
             action.href ? (
               <Link
                 key={action.title}
@@ -229,36 +252,8 @@ export default function InventoryManagerPage() {
               </button>
             )
           ))}
-        </div>
-
-        {/* Inventory Metrics - Read-only display */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
-          {inventoryMetrics.map((metric) => (
-            <div
-              key={metric.label}
-              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm transition-all hover:shadow-md"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className={`w-10 h-10 ${metric.bg} ${metric.color} rounded-2xl flex items-center justify-center`}>
-                  <metric.icon className="w-5 h-5 stroke-[1.5]" />
-                </div>
-                <div className={`flex items-center gap-1 text-xs font-bold ${metric.changeType === 'increase' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {metric.changeType === 'increase' ? (
-                    <ArrowUpRight className="w-3 h-3" />
-                  ) : (
-                    <ArrowDownRight className="w-3 h-3" />
-                  )}
-                  {metric.change}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{metric.label}</p>
-                <h4 className="text-2xl font-bold text-slate-800">{metric.value}</h4>
-              </div>
-            </div>
-          ))}
-        </div>
-
+</div>
+ 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Recent Stock Movements */}
           <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">

@@ -80,12 +80,12 @@ export default function CashierProfilePage() {
         {/* 2. Form Section */}
         <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-blue-500" /> Account Identity
+            <ShieldCheck className="w-5 h-5 text-blue-600" /> Account Identity
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase ml-1">Full Name</label>
+              <label className="text-xs font-bold text-slate-600 uppercase ml-1">Full Name</label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input defaultValue={user?.full_name} className="h-12 pl-11 bg-slate-50 border-none rounded-2xl" />
@@ -93,7 +93,7 @@ export default function CashierProfilePage() {
             </div>
             
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase ml-1">Username</label>
+              <label className="text-xs font-bold text-slate-600 uppercase ml-1">Username</label>
               <div className="relative">
                 <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input value={user?.username} disabled className="h-12 pl-11 bg-slate-100 border-none rounded-2xl cursor-not-allowed" />
@@ -101,7 +101,7 @@ export default function CashierProfilePage() {
             </div>
 
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-bold text-slate-400 uppercase ml-1">Email Address</label>
+              <label className="text-xs font-bold text-slate-600 uppercase ml-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input defaultValue={user?.email} className="h-12 pl-11 bg-slate-50 border-none rounded-2xl" />
@@ -109,7 +109,7 @@ export default function CashierProfilePage() {
             </div>
           </div>
 
-          <Button className="mt-8 bg-blue-600 hover:bg-blue-700 rounded-2xl px-10 h-14 text-lg font-bold shadow-lg shadow-blue-100">
+          <Button>
             Update Profile
           </Button>
         </div>

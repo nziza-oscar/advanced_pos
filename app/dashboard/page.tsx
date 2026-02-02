@@ -48,11 +48,6 @@ interface DashboardStats {
   activeStaff: number;
   lowStockItems: number;
   pendingOrders: number;
-  topCategories: Array<{
-    name: string;
-    revenue: number;
-    change: number;
-  }>;
   recentTransactions: Array<{
     id: string;
     transaction_number: string;
@@ -61,6 +56,14 @@ interface DashboardStats {
     created_at: string;
     status: string;
   }>;
+}
+
+// New interface for top categories
+interface TopCategory {
+  name: string;
+  revenue: number;
+  transactions: number;
+  change: number;
 }
 
 interface InventoryAlert {
@@ -77,6 +80,7 @@ interface InventoryAlert {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [topCategories, setTopCategories] = useState<TopCategory[]>([]);
   const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,19 +89,30 @@ export default function AdminDashboardPage() {
   const fetchData = async () => {
     try {
       setRefreshing(true);
-      const [dashboardRes, alertsRes] = await Promise.all([
+      
+      // Fetch all data in parallel
+      const [dashboardRes, categoriesRes, alertsRes] = await Promise.all([
         fetch(`/api/admin/dashboard?range=${timeRange}`),
+        fetch(`/api/categories/top?range=${timeRange}&limit=5`),
         fetch('/api/admin/inventory/alerts')
       ]);
 
+      // Parse responses
       const dashboardData = await dashboardRes.json();
+      const categoriesData = await categoriesRes.json();
       const alertsData = await alertsRes.json();
-
+      
+      // Update state with fetched data
       if (dashboardData.success) setStats(dashboardData.data);
+      if (categoriesData.success) setTopCategories(categoriesData.data);
       if (alertsData.success) setInventoryAlerts(alertsData.data);
       
+      // Handle errors
       if (!dashboardData.success) {
         toast.error('Failed to load dashboard data');
+      }
+      if (!categoriesData.success) {
+        toast.error('Failed to load category data');
       }
     } catch (error) {
       toast.error('Error loading dashboard data');
@@ -168,7 +183,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight title">Dashboard</h1>
           <p className="text-muted-foreground text-sm md:text-base">
             Overview of business performance and management tools
           </p>
@@ -520,18 +535,18 @@ export default function AdminDashboardPage() {
                 <CardDescription>Revenue by product category</CardDescription>
               </div>
               <Badge variant="outline">
-                {stats?.topCategories?.length || 0} categories
+                {topCategories.length || 0} categories
               </Badge>
             </div>
           </CardHeader>
           <CardContent>
-            {stats?.topCategories && stats.topCategories.length > 0 ? (
+            {topCategories.length > 0 ? (
               <div className="space-y-4">
-                {stats.topCategories.map((category, index) => (
+                {topCategories.map((category, index) => (
                   <div 
                     key={category.name} 
                     className="group space-y-2 cursor-pointer hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                    onClick={() => router.push(`/dashboard/inventory?category=${category.name}`)}
+                    onClick={() => router.push(`/dashboard/inventory?category=${encodeURIComponent(category.name)}`)}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -565,19 +580,40 @@ export default function AdminDashboardPage() {
                             index === 2 ? 'bg-purple-500' : 'bg-muted-foreground'
                           }`}
                           style={{
-                            width: `${Math.min((category.revenue / (stats.topCategories[0]?.revenue || 1)) * 100, 100)}%`
+                            width: `${Math.min((category.revenue / (topCategories[0]?.revenue || 1)) * 100, 100)}%`
                           }}
                         />
                       </div>
                       <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
+                    <div className="text-xs text-muted-foreground">
+                      {category.transactions} transactions
+                    </div>
                   </div>
                 ))}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => router.push('/dashboard/statistics?tab=categories')}
+                >
+                  View all category analytics
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
               </div>
             ) : (
               <div className="text-center py-8">
                 <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No category data available</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => router.push('/dashboard/inventory?filter=with-category')}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Categories
+                </Button>
               </div>
             )}
           </CardContent>
@@ -585,7 +621,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* System Status */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -604,8 +640,8 @@ export default function AdminDashboardPage() {
               <p className="text-2xl font-bold mt-1">{stats?.lowStockItems || 0}</p>
             </div>
             <div className="p-4 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors">
-              <p className="text-sm font-medium text-muted-foreground">Active Sessions</p>
-              <p className="text-2xl font-bold mt-1">-</p>
+              <p className="text-sm font-medium text-muted-foreground">Top Categories</p>
+              <p className="text-2xl font-bold mt-1">{topCategories.length}</p>
             </div>
             <div className="p-4 border rounded-lg hover:border-primary/50 hover:bg-primary/5 transition-colors">
               <p className="text-sm font-medium text-muted-foreground">System Health</p>
@@ -613,7 +649,7 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

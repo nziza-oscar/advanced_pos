@@ -40,3 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 smart-commit.sh
+
+public/uploads/*.jpg
+public/uploads/thumbnails/*.jpg
+public/*.png

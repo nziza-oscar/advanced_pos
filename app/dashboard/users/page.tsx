@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { AddStaffModal } from '@/components/staff/AddStaffModal';
 import { EditStaffModal } from '@/components/staff/EditStaffModal';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
+import { Button } from '@/components/ui/button';
 
 interface StaffMember {
   id: string;
@@ -165,22 +166,21 @@ export default function StaffManagementPage() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Staff Management</h1>
+            <h1 className="text-3xl font-bold text-primary tracking-tight">Staff Management</h1>
             <p className="text-slate-400 font-medium mt-1">Manage permissions and team member access.</p>
           </div>
-          <button 
+          <Button
             onClick={handleAddStaff}
-            className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3 flex items-center gap-2 shadow-lg shadow-blue-200 transition-all active:scale-95"
           >
             <UserPlus className="w-5 h-5" />
             <span className="font-bold uppercase text-xs tracking-widest">Add New Staff</span>
-          </button>
+          </Button>
         </div>
 
         {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-[2rem] border border-blue-50/50 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-blue-200 text-blue-600 rounded-2xl flex items-center justify-center">
               <Users className="w-6 h-6 stroke-[1.5]" />
             </div>
             <div>

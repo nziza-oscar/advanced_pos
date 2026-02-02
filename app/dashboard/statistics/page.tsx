@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { SalesBar } from '@/components/charts/SalesBar';
 import { DateRangePicker } from '@/components/shared/DateRangePicker';
+import { Button } from '@/components/ui/button';
 
 interface AdminStats {
   summary: {
@@ -305,7 +306,7 @@ const handleExportPDF = async () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">System Analytics</h1>
+          <h1 className="text-2xl font-bold title tracking-tight">System Analytics</h1>
           <p className="text-slate-400 font-medium">Detailed performance report across all branches.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -316,13 +317,10 @@ const handleExportPDF = async () => {
           
           {/* Export Options Dropdown */}
           <div className="relative group">
-            <button 
+            <Button
               onClick={() => handleExport('excel')}
               disabled={exporting}
-              className="flex items-center gap-2 px-5 py-3 bg-blue-600
-               text-white rounded font-bold text-xs uppercase
-                tracking-widest hover:bg-blue-700 transition-all
-                 shadow-lg shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              
             >
               {exporting ? (
                 <>
@@ -335,7 +333,7 @@ const handleExportPDF = async () => {
                   Export
                 </>
               )}
-            </button>
+            </Button>
             
             {/* Export Options Dropdown */}
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -368,7 +366,7 @@ const handleExportPDF = async () => {
       {/* Admin Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
       {adminMetrics.map((m, i) => (
-  <div key={m.label} className={`p-7 rounded-[2.5rem] border border-white/20 shadow-sm 
+  <div key={m.label} className={`p-7 rounded-lg border border-white/20 shadow-sm 
   relative overflow-hidden group hover:shadow-md transition-all duration-300
   ${getCardBgClass(i)}`}>
     <div className={`w-12 h-12 ${getIconBgClass(i)} rounded-2xl flex items-center justify-center mb-5 
@@ -424,9 +422,7 @@ const handleExportPDF = async () => {
           <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-blue-100">
-                  <PieChart className="w-5 h-5 stroke-[1.5]" />
-                </div>
+                
                 <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
               </div>
               <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
@@ -490,9 +486,7 @@ const handleExportPDF = async () => {
       <div className="bg-white rounded-[2.5rem] p-8 border border-blue-50/50 shadow-sm">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center">
-              <ShoppingBag className="w-5 h-5 stroke-[1.5]" />
-            </div>
+            
             <div>
               <h3 className="text-lg font-bold text-slate-800">Top Selling Products</h3>
               <p className="text-sm text-slate-400">Best performing items by revenue</p>

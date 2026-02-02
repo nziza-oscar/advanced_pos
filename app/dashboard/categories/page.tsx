@@ -86,11 +86,11 @@ export default function CategoriesPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
+          <h1 className="text-2xl font-bold text-primary">Categories</h1>
           <p className="text-slate-500">Manage and organize your product groups</p>
         </div>
         
-        <Button onClick={() => openModal('add-category')} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => openModal('add-category')} >
           <Plus className="w-4 h-4 mr-2" />
           Add Category
         </Button>
@@ -187,13 +187,13 @@ export default function CategoriesPage() {
           />
           <StatCard 
             title="Total Products" 
-            value={categories.reduce((acc, curr) => acc + (curr.product_count || 0), 0)} 
+            value={categories.reduce((acc, curr) => acc + (Number(curr.product_count) || 0), 0)} 
             icon={<Package className="w-6 h-6 text-green-600" />} 
             bgColor="bg-green-50"
           />
           <StatCard 
             title="Average Density" 
-            value={`${Math.round(categories.reduce((acc, curr) => acc + (curr.product_count || 0), 0) / categories.length)} items/cat`} 
+            value={`${Math.round(categories.reduce((acc, curr) => acc + (Number(curr.product_count) || 0), 0) / categories.length)} items/cat`} 
             icon={<TrendingUp className="w-6 h-6 text-purple-600" />} 
             bgColor="bg-purple-50"
           />

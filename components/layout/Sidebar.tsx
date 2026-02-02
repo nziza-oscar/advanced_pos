@@ -40,7 +40,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* 2. SIDEBAR ASIDE */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-[#FBFDFF] border-r border-blue-50/80 transform transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#FBFDFF] border-r border-slate-400 transform transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         

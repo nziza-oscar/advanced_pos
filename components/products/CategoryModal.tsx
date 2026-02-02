@@ -114,14 +114,12 @@ export function CategoryModal() {
               type="button"
               variant="outline"
               onClick={handleClose}
-              className="flex-1"
               disabled={loading}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
               disabled={loading}
             >
               {loading ? 'Saving...' : isEdit ? 'Update' : 'Save'}

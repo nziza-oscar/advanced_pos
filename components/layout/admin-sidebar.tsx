@@ -59,10 +59,6 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
         <div className="flex items-center justify-between h-24 px-8">
           <div className="flex flex-col">
             <Logo className="h-7 text-blue-600" />
-            <div className="flex items-center gap-1 mt-1">
-              <ShieldCheck className="w-3 h-3 text-blue-400" />
-              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Admin Portal</span>
-            </div>
           </div>
           <Button
             variant="ghost"

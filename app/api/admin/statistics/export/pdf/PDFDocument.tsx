@@ -27,30 +27,36 @@ const styles = StyleSheet.create({
     color: '#333333',
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 20,
     paddingBottom: 15,
     borderBottomWidth: 2,
     borderBottomColor: '#1E3A8A',
     borderBottomStyle: 'solid',
   },
+  logo: {
+    width: 90,
+    height: 90,
+    marginRight: 15,
+  },
+  headerText: {
+    flex: 1,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1E3A8A',
-    textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 12,
     color: '#6B7280',
-    textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   date: {
     fontSize: 10,
     color: '#374151',
-    textAlign: 'center',
-    marginBottom: 10,
   },
   section: {
     marginBottom: 20,
@@ -161,22 +167,28 @@ export const PDFReport = ({ data, period }: any) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* Header with Logo */}
         <View style={styles.header}>
-          <Text style={styles.title}>POS SYSTEM - ADMIN REPORT</Text>
-          <Text style={styles.subtitle}>Sales Performance Analysis</Text>
-          <Text style={styles.date}>
-            Period: {period.startDate} to {period.endDate}
-          </Text>
-          <Text style={styles.date}>
-            Generated: {new Date().toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </Text>
+          <Image 
+            style={styles.logo}
+            src="http://localhost:3000/doc_logo.png"
+          />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>POS SYSTEM - ADMIN REPORT</Text>
+            <Text style={styles.subtitle}>Sales Performance Analysis</Text>
+            <Text style={styles.date}>
+              Period: {period.startDate} to {period.endDate}
+            </Text>
+            <Text style={styles.date}>
+              Generated: {new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
+            </Text>
+          </View>
         </View>
 
         {/* Summary Metrics */}
@@ -289,9 +301,16 @@ export const PDFReport = ({ data, period }: any) => {
 
       {/* Second Page for Payment Methods */}
       <Page size="A4" style={styles.page}>
+        {/* Header with Logo */}
         <View style={styles.header}>
-          <Text style={styles.title}>PAYMENT METHODS ANALYSIS</Text>
-          <Text style={styles.subtitle}>Transaction Distribution by Payment Type</Text>
+          <Image 
+            style={styles.logo}
+            src="/doc_logo.png"
+          />
+          <View style={styles.headerText}>
+            <Text style={styles.title}>PAYMENT METHODS ANALYSIS</Text>
+            <Text style={styles.subtitle}>Transaction Distribution by Payment Type</Text>
+          </View>
         </View>
 
         {/* Payment Methods Table */}

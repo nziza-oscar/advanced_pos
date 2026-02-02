@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Product, Category } from '@/lib/database/models';
-import { generateBarcode } from '@/lib/utils/barcode-generator';
+import { Product, Category, Barcode, sequelize } from '@/lib/database/models';
 import { validateFile, uploadProductImage } from '@/lib/utils/file-upload';
+import { Op } from 'sequelize';
+
 /**
  * GET - Fetch all products
  * Includes category information for better organization in the UI
@@ -30,13 +31,13 @@ export async function GET() {
   }
 }
 
-
-
-
 /**
  * POST - Create product with real image upload, cost, and selling price
+ * Uses the first available barcode from the Barcode table
  */
 export async function POST(request: NextRequest) {
+  const transaction = await sequelize.transaction();
+  
   try {
     const formData = await request.formData();
     
@@ -48,10 +49,14 @@ export async function POST(request: NextRequest) {
     const category_id = formData.get('category_id') as string;
     const imageFile = formData.get('image') as File | null;
 
-    // 2. Validation - Check for presence and valid numbers
+    // 1. Validation - Check for presence and valid numbers
     if (!name || !cost_price_raw || !selling_price_raw) {
+      await transaction.rollback();
       return NextResponse.json(
-        { error: 'Product name, cost price, and selling price are required' },
+        { 
+          success: false,
+          error: 'Product name, cost price, and selling price are required' 
+        },
         { status: 400 }
       );
     }
@@ -60,57 +65,116 @@ export async function POST(request: NextRequest) {
     const selling_price = parseFloat(selling_price_raw) || 0;
 
     if (selling_price < cost_price) {
+      await transaction.rollback();
       return NextResponse.json(
-        { error: 'Selling price cannot be lower than cost price' },
+        { 
+          success: false,
+          error: 'Selling price cannot be lower than cost price' 
+        },
         { status: 400 }
       );
     }
 
-    // 3. Image Processing - Using the direct function calls
+    // 2. Get first available barcode
+    const availableBarcode = await Barcode.findOne({
+      where: {
+        status: 'available'
+      },
+      order: [['barcode_id', 'ASC']],
+      lock: true,
+      transaction
+    });
+
+    if (!availableBarcode) {
+      await transaction.rollback();
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'No available barcodes. Please generate new barcodes before creating products.',
+          errorType: 'NO_BARCODES_AVAILABLE'
+        },
+        { status: 400 }
+      );
+    }
+
+    // 3. Image Processing
     let image_url = null;
     if (imageFile && imageFile.size > 0) {
       const validation = validateFile(imageFile);
       if (!validation.valid) {
-        return NextResponse.json({ error: validation.error }, { status: 400 });
+        await transaction.rollback();
+        return NextResponse.json({ 
+          success: false,
+          error: validation.error 
+        }, { status: 400 });
       }
       
-      // The service handles directory creation and sharp processing
       const upload = await uploadProductImage(imageFile);
       image_url = upload.url;
     }
 
-    // 4. Barcode Generation
-    let barcode = generateBarcode();
-    let attempts = 0;
-    while (attempts < 10) {
-      const existing = await Product.findOne({ where: { barcode } });
-      if (!existing) break;
-      barcode = generateBarcode();
-      attempts++;
+    // 4. Create product with the assigned barcode
+    const product = await Product.create({
+      barcode: availableBarcode.barcode, // Use the actual barcode value
+      name,
+      cost_price,
+      price: selling_price, 
+      image_url,
+      stock_quantity: parseInt(stock_quantity || '0') || 0,
+      category_id: (category_id && category_id !== "undefined") ? category_id : null,
+      min_stock_level: 5
+    }, { transaction });
+
+    // 5. Update barcode status to 'used'
+    await availableBarcode.update({
+      status: 'used'
+    }, { transaction });
+
+    // 6. Create stock log entry
+    if (parseInt(stock_quantity || '0') > 0) {
+      // Assuming you have a StockLog model
+      // await StockLog.create({
+      //   product_id: product.id,
+      //   user_id: 'system', // Or get from auth
+      //   change_amount: parseInt(stock_quantity || '0'),
+      //   reason: 'initial_stock',
+      //   notes: 'Initial stock when product was created'
+      // }, { transaction });
     }
 
-  // 5. Database Save
-const product = await Product.create({
-  barcode,
-  name,
-  cost_price,
-  price: selling_price, 
-  image_url,
-  stock_quantity: parseInt(stock_quantity || '0') || 0,
-  category_id: (category_id && category_id !== "undefined") ? category_id : null,
-  min_stock_level: 0 
-});
+    await transaction.commit();
 
     return NextResponse.json({
       success: true,
       message: 'Product created successfully',
-      data: product 
+      data: {
+        ...product.toJSON(),
+        assigned_barcode_id: availableBarcode.barcode_id,
+        assigned_barcode: availableBarcode.barcode
+      }
     }, { status: 201 });
 
   } catch (error: any) {
+    await transaction.rollback();
     console.error('Create product error:', error);
+    
+    // Check for duplicate barcode error
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Barcode already exists in system. Please try again or generate new barcodes.',
+          errorType: 'BARCODE_CONFLICT'
+        },
+        { status: 400 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: error.message || 'Failed to create product' },
+      { 
+        success: false,
+        error: error.message || 'Failed to create product' 
+      },
       { status: 500 }
     );
   }

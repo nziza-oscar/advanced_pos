@@ -65,7 +65,7 @@ export default function CashierSalesPage() {
       {/* 1. Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">My Sales History</h1>
+          <h1 className="text-2xl font-bold text-primary">My Sales History</h1>
           <p className="text-sm text-slate-500">Real-time tracking of your transactions</p>
         </div>
         <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export default function CashierSalesPage() {
             <Calendar className="w-4 h-4" />
             Today
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-2xl gap-2 shadow-lg shadow-blue-100">
+          <Button className="rounded-2xl gap-2 shadow-lg shadow-blue-100">
             <Printer className="w-4 h-4" />
             Export List
           </Button>
@@ -82,7 +82,7 @@ export default function CashierSalesPage() {
 
       {/* 2. Dynamic Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-slate-400 shadow-sm">
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Revenue</p>
           <div className="flex items-end justify-between mt-2">
             <h3 className="text-2xl font-bold text-slate-800">
@@ -93,13 +93,13 @@ export default function CashierSalesPage() {
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-slate-400 shadow-sm">
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Sales</p>
           <h3 className="text-2xl font-bold text-slate-800 mt-2">
             {stats.count} <span className="text-sm font-normal text-slate-400">Transactions</span>
           </h3>
         </div>
-        <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
+        <div className="bg-white p-6 rounded-xl border border-slate-400 shadow-sm">
           <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Average Basket</p>
           <h3 className="text-2xl font-bold text-slate-800 mt-2">
             {Math.round(stats.average).toLocaleString()} <span className="text-sm font-normal text-slate-400">FRW</span>
@@ -108,7 +108,7 @@ export default function CashierSalesPage() {
       </div>
 
       {/* 3. Table Area */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-[2.5rem] border border-slate-400 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row gap-4 justify-between">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -128,7 +128,7 @@ export default function CashierSalesPage() {
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-slate-50/50">
-              <TableRow className="hover:bg-transparent border-slate-100">
+              <TableRow className="hover:bg-transparent border-slate-400">
                 <TableHead className="w-[150px] text-xs uppercase tracking-wider">Receipt ID</TableHead>
                 <TableHead className="text-xs uppercase tracking-wider">Time</TableHead>
                 <TableHead className="text-xs uppercase tracking-wider">Method</TableHead>

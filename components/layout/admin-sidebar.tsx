@@ -51,7 +51,7 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
 
       {/* 2. SIDEBAR ASIDE */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-64 bg-[#FBFDFF] border-r border-blue-50/80 transform transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
+        fixed inset-y-0 left-0 z-50 w-64 bg-[#FBFDFF] border-r border-gray-400 transform transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         
@@ -82,9 +82,9 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
                   key={item.href}
                   href={item.href}
                   className={`
-                    group relative flex items-center justify-between px-4 py-3 rounded-[1.5rem] transition-all duration-300
+                    group relative flex items-center justify-between px-4 py-2 rounded-[1.5rem] transition-all duration-300
                     ${isActive
-                      ? 'bg-white text-blue-600 shadow-[0_10px_25px_-10px_rgba(59,130,246,0.15)] ring-1 ring-blue-50'
+                      ? 'bg-primary text-blue-200 shadow-[0_10px_25px_-10px_rgba(59,130,246,0.15)] ring-1 ring-blue-50'
                       : `text-slate-600 ${item.bg} hover:text-blue-500`
                     }
                   `}
@@ -93,7 +93,7 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
                     <div className={`
                       p-2.5 rounded-2xl transition-all duration-300
                       ${isActive 
-                        ? 'bg-blue-600 text-white rotate-[5deg]' 
+                        ? 'bg-blue-200 text-primary rotate-[5deg]' 
                         : `bg-white border border-blue-50 shadow-sm ${item.accent}`
                       }
                     `}>
@@ -105,7 +105,7 @@ export function AdminSidebar({ isOpen, onClose }: SidebarProps) {
                   </div>
 
                   {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                   )}
                 </Link>
               );

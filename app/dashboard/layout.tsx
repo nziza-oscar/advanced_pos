@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { AdminSidebar } from '@/components/layout/admin-sidebar';
-import { Header } from '@/components/layout/Header';
+import { AdminHeader } from '@/components/layout/AdminHeader';
 import { ModalProvider } from '@/components/shared/ModalProvider';
 import { Footer } from '@/components/layout/Footer';
 
@@ -20,7 +20,7 @@ export default function DashboardLayout({
       
       {/* Main Content Area - Offset by sidebar width on desktop */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64 transition-all duration-300">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
         
         <main className="py-8 flex-1">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -4,19 +4,12 @@ import { useState, useEffect } from 'react';
 import { 
   Menu, 
   Bell, 
-  User, 
-  ShoppingCart, 
-  Search, 
-  Package, 
-  Trash2, 
-  ArrowRight,
   LogOut,
   Settings,
   UserCircle,
   Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -28,7 +21,8 @@ import {
 import { useCartStore, useCartSummary } from '@/lib/store/cart-store';
 import Link from 'next/link';
 import { CheckoutModal } from '../pos/CheckoutModal';
-import Image from 'next/image';
+import { useNotificationStore } from '@/lib/store/notification-store';
+
 interface UserProfile {
   id: string;
   username: string;
@@ -36,24 +30,23 @@ interface UserProfile {
   role: string;
 }
 
-
 interface HeaderProps {
   onMenuClick: () => void;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function AdminHeader({ onMenuClick }: HeaderProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  const [notifications] = useState([
-    { id: 1, title: 'Low Stock Alert', desc: 'Product "Milk" is below 5 units.', time: '2m ago' },
-    { id: 2, title: 'New Sale', desc: 'Transaction #4029 completed.', time: '15m ago' },
-  ]);
+  const { notifications, unreadCount, fetchNotifications,markAsRead } = useNotificationStore();
 
-  const items = useCartStore((state) => state.items);
-  const removeItem = useCartStore((state) => state.removeItem);
-  const { itemsCount, totalAmount } = useCartSummary();
+useEffect(() => {
+  fetchNotifications();
+  const interval = setInterval(fetchNotifications, 60000);
+  return () => clearInterval(interval);
+}, []);
+
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -65,7 +58,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           setProfile(result.data.user);
         }
       } catch (error) {
-        console.error("Auth sync failed");
+        console.error("Auth sync failed.");
       } finally {
         setLoadingProfile(false);
       }
@@ -80,197 +73,134 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-400 bg-white px-4 sm:px-6 lg:px-8">
-        
-         <div className='flex-1 py-1'>
-          <Image src="/logo.png" alt='not found' width={180} height={90} className='object-cover'/>
-
-         </div>
+      <header className="sticky top-0 z-30 flex h-16 w-full items-center  justify-between border-b border-gray-400 bg-background px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 flex-1">
           <Button
             variant="ghost"
             size="icon"
             onClick={onMenuClick}
-            className="lg:hidden text-slate-500"
+            className="lg:hidden rounded-none"
           >
             <Menu className="w-5 h-5" />
           </Button>
 
-          <div className="hidden md:flex relative w-full max-w-sm items-center">
-            <Search className="absolute left-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              type="search"
-              placeholder="Search products or orders..."
-              className="pl-9 h-9 w-full bg-slate-50 border-slate-200 focus-visible:ring-blue-500"
-            />
+          <div className="hidden md:flex">
+            <h3 className="text-xs font-bold uppercase tracking-[0.3em]">System Admin</h3>
           </div>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="relative p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none">
-                <ShoppingCart className="w-5 h-5 text-slate-600" />
-                {items.length > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white ring-2 ring-white animate-in zoom-in duration-300">
-                    {items.length}
+              <button className="relative p-2 hover:bg-muted transition-colors focus:outline-none">
+                <Bell className="w-5 h-5 text-muted-foreground" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center bg-primary text-[10px] text-white font-bold">
+                    {unreadCount}
                   </span>
                 )}
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 p-2 shadow-xl border-slate-200">
-              <div className="flex justify-between items-center px-2 py-1.5">
-                 <DropdownMenuLabel className="p-0 text-slate-900 text-sm">Current Cart</DropdownMenuLabel>
-                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">{items.length} Items</span>
-              </div>
-              <DropdownMenuSeparator />
-              
-              {itemsCount === 0 ? (
-                <div className="py-10 flex flex-col items-center justify-center gap-2 text-slate-400">
-                  <ShoppingCart className="w-8 h-8 opacity-20" />
-                  <p className="text-sm italic">Your cart is empty</p>
-                </div>
-              ) : (
-                <>
-                  <div className="max-h-64 overflow-y-auto py-1">
-                    {items.map((item) => (
-                      <div key={item.product_id} className="flex items-center justify-between p-2 hover:bg-slate-50 rounded-md group transition-colors">
-                         <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 bg-slate-100 rounded flex items-center justify-center border border-slate-200">
-                              {item.image_url ? (
-                                <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                              ) : (
-                                <Package className="w-4 h-4 text-slate-400" />
-                              )}
-                            </div>
-                            <div className="flex flex-col">
-                              <p className="text-xs text-slate-800 line-clamp-1">{item.name}</p>
-                              <p className="text-[10px] text-slate-500">
-                                {item.quantity} × {Number(item.unit_price).toLocaleString()} FRW
-                              </p>
-                            </div>
-                         </div>
-                         <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={(e) => {
-                            e.preventDefault();
-                            removeItem(item.product_id);
-                          }}
-                          className="h-8 w-8 text-slate-300 hover:text-red-500 group-hover:opacity-100 transition-all"
-                         >
-                            <Trash2 className="w-4 h-4" />
-                         </Button>
-                      </div>
-                    ))}
-                  </div>
-                  <DropdownMenuSeparator />
-                  <div className="px-2 py-3">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-xs text-slate-500 uppercase tracking-tighter">Total</span>
-                      <span className="text-sm text-blue-600">{Number(totalAmount ).toLocaleString()} FRW</span>
-                    </div>
-                    <DropdownMenuItem className="p-0 focus:bg-transparent">
-                        <Button onClick={() => setIsCheckoutOpen(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white h-10 gap-2">
-                          Checkout Now
-                          <ArrowRight className="w-4 h-4" />
-                        </Button>
-                    </DropdownMenuItem>
-                  </div>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="relative p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none">
-                <Bell className="w-5 h-5 text-slate-600" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] text-white ring-2 ring-white">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 shadow-xl border-slate-200">
-              <DropdownMenuLabel className="flex justify-between items-center px-4 py-3">
-                <span className="text-slate-900">Notifications</span>
-                <button className="text-[10px] text-blue-600 hover:underline">Mark all as read</button>
+            <DropdownMenuContent align="end" className="w-80 border-muted rounded-none shadow-none p-0">
+              <DropdownMenuLabel className="flex justify-between items-center px-4 py-3 bg-muted/50">
+                <span className="text-[10px] font-bold uppercase tracking-widest">Notifications</span>
+                <button className="text-[9px] uppercase font-bold hover:underline">Clear</button>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="m-0" />
               <div className="max-h-80 overflow-y-auto">
-                {notifications.map((notif) => (
-                  <DropdownMenuItem key={notif.id} className="flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-slate-50 last:border-0">
-                    <p className="text-xs text-slate-900">{notif.title}</p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{notif.desc}</p>
-                    <p className="text-[9px] text-blue-500 mt-1 uppercase tracking-wide">{notif.time}</p>
+               {notifications.slice(0, 5).map((notif) => (
+                  <DropdownMenuItem 
+                    key={notif.id} 
+                    onClick={() => markAsRead(notif.id)}
+                    className={`flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-muted last:border-0 rounded-none focus:bg-muted transition-colors ${
+                      !notif.is_read ? 'bg-primary/[0.03]' : ''
+                    }`}
+                  >
+                    <div className="flex w-full justify-between items-center">
+                      <p className={`text-[10px] font-bold uppercase tracking-tight ${!notif.is_read ? 'text-primary' : 'text-foreground'}`}>
+                        {notif.title}
+                      </p>
+                      {!notif.is_read && <div className="h-1.5 w-1.5 bg-primary rounded-none" />}
+                    </div>
+                    
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">
+                      {notif.message}
+                    </p>
+                    
+                    <p className="text-[9px] text-muted-foreground/60 mt-1 uppercase tracking-widest font-medium">
+                      {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
                   </DropdownMenuItem>
                 ))}
+
+{notifications.length === 0 && (
+  <div className="p-8 text-center">
+    <p className="text-[10px] text-muted-foreground uppercase tracking-[0.2em]">No new alerts.</p>
+  </div>
+)}
               </div>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="m-0" />
               <Link href="/notifications" className="w-full">
-                <DropdownMenuItem className="text-center justify-center text-xs text-slate-600 py-3 cursor-pointer">
-                  View All Activity
+                <DropdownMenuItem className="text-center justify-center text-[10px] font-bold uppercase tracking-widest py-3 cursor-pointer rounded-none">
+                  All Activity
                 </DropdownMenuItem>
               </Link>
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
+          <div className="h-6 w-px bg-muted mx-1 hidden sm:block" />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2.5 px-2 hover:bg-slate-100 h-10 transition-all focus:ring-0">
-                <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-md">
+              <Button variant="ghost" className="flex items-center gap-3 px-2 hover:bg-muted h-12 transition-all rounded-none focus:ring-0">
+                <div className="h-8 w-8 bg-primary flex items-center justify-center text-primary-foreground">
                   {loadingProfile ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <span className="text-xs uppercase">{getInitials(profile?.full_name || '??')}</span>
+                    <span className="text-[10px] font-bold">{getInitials(profile?.full_name || '??')}</span>
                   )}
                 </div>
                 <div className="hidden sm:flex flex-col items-start text-left">
-                  <span className="text-xs text-blue-600 leading-none">
-                    {loadingProfile ? 'Checking...' : profile?.full_name}
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    {loadingProfile ? 'Syncing' : profile?.full_name}
                   </span>
-                  <span className="text-[10px] text-slate-500 mt-1 uppercase tracking-tighter">
-                    {loadingProfile ? 'Session' : profile?.role}
+                  <span className="text-[9px] text-muted-foreground uppercase tracking-widest">
+                    {loadingProfile ? '...' : profile?.role}
                   </span>
                 </div>
               </Button>
             </DropdownMenuTrigger>
             
-              <DropdownMenuContent align="end" className="w-56 p-1.5 shadow-xl border-slate-200 rounded-2xl">
-                <DropdownMenuLabel className="px-2 py-2 text-[10px] text-slate-500 uppercase tracking-widest">
-                  Account Settings
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-slate-100" />
+            <DropdownMenuContent align="end" className="w-56 p-0 shadow-none border-muted rounded-none">
+              <DropdownMenuLabel className="px-4 py-3 text-[9px] text-muted-foreground uppercase tracking-[0.2em] bg-muted/30">
+                User Management
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator className="m-0" />
 
-                <DropdownMenuItem asChild className="cursor-pointer py-2.5 rounded-xl gap-3 focus:bg-blue-50 focus:text-blue-600 transition-colors">
-                  <Link href="/profile" className="flex items-center w-full gap-3">
-                    <UserCircle className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-medium">My Profile</span>
-                  </Link>
-                </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer py-3 rounded-none gap-3 focus:bg-muted transition-colors px-4">
+                <Link href="/profile" className="flex items-center w-full gap-3">
+                  <UserCircle className="w-4 h-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">My Profile</span>
+                </Link>
+              </DropdownMenuItem>
 
-                <DropdownMenuItem asChild className="cursor-pointer py-2.5 rounded-xl gap-3 focus:bg-blue-50 focus:text-blue-600 transition-colors">
-                  <Link href="settings" className="flex items-center w-full gap-3">
-                    <Settings className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-medium">Settings</span>
-                  </Link>
-                </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer py-3 rounded-none gap-3 focus:bg-muted transition-colors px-4">
+                <Link href="/settings" className="flex items-center w-full gap-3">
+                  <Settings className="w-4 h-4" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest">Settings</span>
+                </Link>
+              </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="bg-slate-100" />
+              <DropdownMenuSeparator className="m-0" />
 
-                <DropdownMenuItem 
-                  className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer py-2.5 rounded-xl gap-3 transition-colors" 
-                  onClick={() => window.location.href = '/login'}
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="text-sm font-medium">Logout</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer py-3 rounded-none gap-3 transition-colors px-4" 
+                onClick={() => window.location.href = '/login'}
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">Terminate Session</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </header>

@@ -220,7 +220,7 @@ const getIconBgClass = (index: number) => {
     },
     { 
       label: 'Active Staff', 
-      value: summary.activeStaff.toString(), 
+      value: summary?.activeStaff?.toString(), 
       trend: 0,
       icon: Users, 
       color: 'text-sky-600', 
@@ -306,7 +306,7 @@ const handleExportPDF = async () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold title tracking-tight">System Analytics</h1>
+          <h1 className="text-2xl font-bold text-primary tracking-tight">System Analytics</h1>
           <p className="text-slate-400 font-medium">Detailed performance report across all branches.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -459,7 +459,7 @@ const handleExportPDF = async () => {
           <div className="mt-12 p-5 bg-blue-50 rounded-3xl border border-blue-100/50">
             <h4 className="text-sm font-bold text-slate-700 mb-3">Payment Methods</h4>
             <div className="space-y-3">
-              {paymentMethods.map((pm) => (
+              {Array.isArray(paymentMethods) && paymentMethods.map((pm) => (
                 <div key={pm.method} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {getPaymentMethodIcon(pm.method)}
@@ -493,7 +493,7 @@ const handleExportPDF = async () => {
             </div>
           </div>
           <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-            {topProducts.length} Products
+            {topProducts?.length} Products
           </span>
         </div>
 
@@ -510,7 +510,7 @@ const handleExportPDF = async () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {topProducts.map((product, index) => (
+              { Array.isArray(topProducts) && topProducts.map((product, index) => (
                 <tr key={index} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${

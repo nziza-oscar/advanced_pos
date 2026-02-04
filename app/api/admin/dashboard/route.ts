@@ -144,7 +144,7 @@ async function getTopCategories(startDate: Date, endDate: Date) {
     SELECT 
       c.name,
       COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue,
-      0 as change -- You would calculate change from previous period
+      0 as \`change\`
     FROM categories c
     LEFT JOIN products p ON p.category_id = c.id
     LEFT JOIN transaction_items ti ON ti.product_id = p.id
@@ -156,14 +156,17 @@ async function getTopCategories(startDate: Date, endDate: Date) {
     ORDER BY revenue DESC
     LIMIT 5
   `, {
-    replacements: { start: startDate, end: endDate },
+    replacements: { 
+      start: startDate.toISOString().slice(0, 19).replace('T', ' '), 
+      end: endDate.toISOString().slice(0, 19).replace('T', ' ') 
+    },
     type: QueryTypes.SELECT
   }) as any[];
 
   return categories.map(cat => ({
     name: cat.name,
     revenue: parseFloat(cat.revenue),
-    change: 0 // Calculate this if you have previous period data
+    change: 0
   }));
 }
 
@@ -188,7 +191,7 @@ async function getRecentTransactions() {
   return transactions.map(tx => ({
     id: tx.id,
     transaction_number: tx.transaction_number,
-    total_amount: parseFloat(tx.total_amount),
+    total_amount: tx.total_amount,
     payment_method: tx.payment_method,
     status: tx.status,
     created_at: tx.created_at

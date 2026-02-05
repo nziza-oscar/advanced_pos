@@ -21,6 +21,7 @@ import Link from 'next/link';
 import { useModalStore } from '@/lib/store/modal-store';
 import { AddProductModal } from '@/components/products/AddProductModal';
 import { Button } from '@/components/ui/button';
+import { useUIStore } from '@/lib/store';
 
 export default function InventoryManagerPage() {
   const [data, setData] = useState<any>(null);
@@ -29,6 +30,7 @@ export default function InventoryManagerPage() {
   
   // Get modal store functions
   const { openModal, type, isOpen } = useModalStore();
+  const { openModal:openCategoryModal} = useUIStore()
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -188,13 +190,10 @@ export default function InventoryManagerPage() {
             >
                Add Product
             </Button>
-            <button
-              onClick={handleExportReport}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-2xl text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
+            <Button onClick={() => openCategoryModal('add-category')} >
+              Add Category
+            </Button>
+            
           </div>
         </div>
 

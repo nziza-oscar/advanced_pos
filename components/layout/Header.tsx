@@ -79,7 +79,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-slate-300 bg-white px-4 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 flex h-16 w-full items-center overflow-hidden justify-between border-b border-slate-300 bg-white px-4 sm:px-6 lg:px-8">
         
         <div className="flex items-center gap-4 flex-1">
           <Button

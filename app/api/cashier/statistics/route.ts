@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { Op, fn, col } from 'sequelize';
+import { Op, fn, col, literal } from 'sequelize';
 import { Transaction, TransactionItem } from '@/lib/database/models';
 import { verifyAuth } from '@/lib/auth/auth-utils';
 
@@ -20,9 +20,9 @@ export async function GET(req: Request) {
           created_at: { [Op.gte]: startOfDay }
         },
         attributes: [
-          [fn('SUM', col('total_amount')), 'total_revenue'],
-          [fn('COUNT', col('id')), 'transaction_count'],
-          [fn('SUM', col('discount_amount')), 'total_discounts']
+          [fn('COALESCE', fn('SUM', col('total_amount')), 0), 'total_revenue'],
+          [fn('COALESCE', fn('COUNT', col('id')), 0), 'transaction_count'],
+          [fn('COALESCE', fn('SUM', col('discount_amount')), 0), 'total_discounts']
         ],
         raw: true
       }),
@@ -35,7 +35,7 @@ export async function GET(req: Request) {
         },
         attributes: [
           'payment_method',
-          [fn('SUM', col('total_amount')), 'amount']
+          [fn('COALESCE', fn('SUM', col('total_amount')), 0), 'amount']
         ],
         group: ['payment_method'],
         raw: true
@@ -48,13 +48,15 @@ export async function GET(req: Request) {
           attributes: [],
           where: {
             created_by: user.id,
+            status: 'completed',
             created_at: { [Op.gte]: startOfDay }
           }
         }],
-        attributes: [[fn('SUM', col('quantity')), 'total_items']],
+        attributes: [[fn('COALESCE', fn('SUM', col('quantity')), 0), 'total_items']],
         raw: true
       }),
 
+      // FIXED: Using MySQL HOUR() function instead of DATE_PART
       Transaction.findAll({
         where: {
           created_by: user.id,
@@ -62,27 +64,29 @@ export async function GET(req: Request) {
           created_at: { [Op.gte]: startOfDay }
         },
         attributes: [
-          [fn('DATE_PART', 'hour', col('created_at')), 'hour'],
-          [fn('SUM', col('total_amount')), 'total']
+          // Using literal for MySQL HOUR() function
+          [literal('HOUR(created_at)'), 'hour'],
+          [fn('COALESCE', fn('SUM', col('total_amount')), 0), 'total']
         ],
-        group: [fn('DATE_PART', 'hour', col('created_at'))],
-        order: [[fn('DATE_PART', 'hour', col('created_at')), 'ASC']],
+        group: [literal('HOUR(created_at)')],
+        order: [[literal('HOUR(created_at)'), 'ASC']],
         raw: true
       })
     ]);
 
-    const hourlyData = hourlyRaw.map((item: any) => {
-      const h = Number(item.hour);
+    const hourlyData = Array.from({ length: 24 }, (_, i) => {
+      const hourData = hourlyRaw.find((item: any) => parseInt(item.hour) === i);
       return {
-        time: `${h % 12 || 12} ${h >= 12 ? 'PM' : 'AM'}`,
-        amount: Number(item.total)
+        time: `${i % 12 || 12} ${i >= 12 ? 'PM' : 'AM'}`,
+        hour: i,
+        amount: hourData ? Number(hourData.total) : 0
       };
     });
 
     const payMethods = { cash: 0, momo: 0, card: 0, bank: 0 };
     payments.forEach((p: any) => {
       const key = p.payment_method.toLowerCase() as keyof typeof payMethods;
-      if (payMethods[key] !== undefined) payMethods[key] = Number(p.amount);
+      if (payMethods[key] !== undefined) payMethods[key] = Number(p.amount || 0);
     });
 
     return NextResponse.json({
@@ -99,6 +103,7 @@ export async function GET(req: Request) {
       }
     });
   } catch (error: any) {
+    console.error('Cashier dashboard error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

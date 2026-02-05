@@ -47,8 +47,8 @@ export default function CashierStatisticsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-semibold text-blue-600 tracking-tight">Shift Performance</h1>
-            <p className="text-blue-300 font-medium text-sm mt-1">Real-time usage overview</p>
+            <h1 className="text-3xl font-semibold text-primary tracking-tight">Shift Performance</h1>
+            <p className="text-gray-700 font-medium text-sm mt-1">Real-time usage overview</p>
           </div>
           <button onClick={fetchData} className="p-3 text-blue-400 bg-white border border-blue-50 rounded-2xl hover:bg-blue-50 transition-all">
             <RefreshCcw className="w-5 h-5" />
@@ -58,11 +58,11 @@ export default function CashierStatisticsPage() {
         {/* Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {metrics.map((m) => (
-            <div key={m.label} className="bg-white p-6 rounded-[2rem] border border-blue-50/50 shadow-sm">
+            <div key={m.label} className="bg-white p-6 rounded-xl border border-primary shadow-sm">
               <div className="w-10 h-10 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center mb-4">
                 <m.icon className="w-5 h-5 stroke-[1.5]" />
               </div>
-              <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest mb-1">{m.label}</p>
+              <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">{m.label}</p>
               <p className="text-2xl font-bold text-blue-600">{m.value}</p>
             </div>
           ))}
@@ -86,7 +86,7 @@ export default function CashierStatisticsPage() {
               <BreakdownRow icon={CreditCard} label="Card" value={payments.card} color="text-indigo-500" bg="bg-indigo-50" />
             </div>
 
-            <div className="mt-10 bg-blue-600 p-6 rounded-[2rem] text-white">
+            <div className="mt-10 bg-blue-600 p-6 rounded-xl text-white">
               <p className="text-[10px] font-bold text-blue-100 uppercase tracking-widest mb-1 opacity-80">Total Collected</p>
               <p className="text-3xl font-bold">{summary.revenue.toLocaleString()}</p>
             </div>

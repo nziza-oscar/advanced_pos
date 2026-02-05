@@ -38,7 +38,7 @@ export default function CashierPage() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full max-h-[calc(100vh-120px)]">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full]">
       
       {/* 1. Product Selection Zone (Left) */}
       <div className="lg:col-span-8 flex flex-col gap-4">
@@ -55,7 +55,7 @@ export default function CashierPage() {
          
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-y-auto pr-2">
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-hidden pr-2">
           {filteredProducts.map((product) => (
             <button
               key={product.id}
@@ -79,14 +79,16 @@ export default function CashierPage() {
               </div>
             </button>
           ))}
+
         </div>
       </div>
 
       {/* 2. Order Summary Zone (Right) */}
-      <div className="lg:col-span-4 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/50 flex flex-col overflow-hidden">
+      <div className="lg:col-span-4 bg-white rounded-[1.5rem] border border-slate-400
+       shadow-xl shadow-slate-300/50 flex flex-col overflow-hidden">
         <div className="p-6 border-b border-slate-50 flex justify-between items-center">
           <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-            <ReceiptText className="w-5 h-5 text-blue-500" /> Current Order
+            Customer items
           </h2>
           <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase">
             {itemsCount} Items

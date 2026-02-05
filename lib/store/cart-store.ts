@@ -27,7 +27,7 @@ interface CartStore {
   discountRate: number;
 
   // Actions
-  addItem: (product: any) => void;
+  addItem: (product: any) => boolean;
   updateQuantity: (productId: string, quantity: number) => void;
   removeItem: (productId: string) => void;
   clearCart: () => void;
@@ -69,10 +69,16 @@ export const useCartStore = create<CartStore>()(
         let updatedItems;
         if (existingItem) {
           const newQuantity = existingItem.quantity + 1;
-          if (newQuantity > product.stock_quantity) return;
-          updatedItems = items.map((item) =>
+          if (newQuantity > product.stock_quantity){
+
+           return false;
+          }
+         else{
+          
+           updatedItems = items.map((item) =>
             item.product_id === product.id ? { ...item, quantity: newQuantity } : item
           );
+         }
         } else {
           updatedItems = [
             ...items,
@@ -93,6 +99,7 @@ export const useCartStore = create<CartStore>()(
           items: updatedItems,
           ...calculateTotals(updatedItems, taxRate, discountRate),
         });
+        return true
       },
 
       updateQuantity: (productId, quantity) => {

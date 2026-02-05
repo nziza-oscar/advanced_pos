@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Transaction, TransactionItem, Product, User, StockLog, sequelize } from '@/lib/database/models';
+import { createNotification } from '@/lib/database/helpers/notifications'; 
 import { Op } from 'sequelize';
 import jwt from 'jsonwebtoken';
 
@@ -20,12 +21,9 @@ function generateTransactionNumber(): string {
 }
 
 export async function POST(request: NextRequest) {
-    const body = await request.json();
-
   const t = await sequelize.transaction();
 
   try {
-    // 1. EXTRACT CASHIER ID FROM TOKEN COOKIE
     const token = request.cookies.get('token')?.value;
 
     if (!token) {
@@ -42,7 +40,6 @@ export async function POST(request: NextRequest) {
     const created_by = decoded.id;
     const userName = decoded.full_name || decoded.username || 'Unknown User';
 
-    // 2. PARSE REQUEST BODY
     const body = await request.json();
     const {
       items,
@@ -56,7 +53,6 @@ export async function POST(request: NextRequest) {
       customer_name
     } = body;
 
-    // --- VALIDATION ---
     if (!items?.length) throw new Error('Cannot process an empty cart.');
 
     const paid = parseFloat(amount_paid || total_amount);
@@ -92,7 +88,6 @@ export async function POST(request: NextRequest) {
         throw new Error(`Insufficient stock for ${product.name}. Requested: ${item.quantity}, Available: ${product.stock_quantity}`);
       }
 
-      // Create transaction item
       await TransactionItem.create({
         transaction_id: transaction.id,
         product_id: item.product_id,
@@ -105,16 +100,13 @@ export async function POST(request: NextRequest) {
         product_image: product.image_url || "not provided"
       }, { transaction: t });
 
-      // Get current stock before decrement
       const currentStock = product.stock_quantity;
       
-      // Atomic decrement
       await product.decrement('stock_quantity', { 
         by: item.quantity, 
         transaction: t 
       });
 
-      // Refresh to get updated stock
       await product.reload({ transaction: t });
       const newStock = product.stock_quantity;
 
@@ -122,33 +114,28 @@ export async function POST(request: NextRequest) {
       await StockLog.create({
         product_id: item.product_id,
         user_id: created_by,
-        change_amount: -item.quantity, // Negative for sales
+        change_amount: -item.quantity,
         reason: 'sale',
-        notes: `Sold ${item.quantity} units via transaction ${transaction.transaction_number}. Customer: ${customer_name || 'Walk-in'}. Cashier: ${userName}. Stock changed from ${currentStock} to ${newStock}.`
+        notes: `Sold ${item.quantity} units via transaction ${transaction.transaction_number}. Stock changed from ${currentStock} to ${newStock}.`
       }, { transaction: t });
 
-      // Check if stock is now low (below min_stock_level) and create alert log
-      if (newStock < product.min_stock_level && newStock > 0) {
-        await StockLog.create({
-          product_id: item.product_id,
-          user_id: created_by,
-          change_amount: 0, // No change, just an alert
-          reason: 'adjustment',
-          notes: `LOW STOCK ALERT: ${product.name} is now below minimum stock level (${newStock} < ${product.min_stock_level}).`
-        }, { transaction: t });
-      }
-
-      // Check if stock is now zero
-      if (newStock === 0) {
-        await StockLog.create({
-          product_id: item.product_id,
-          user_id: created_by,
-          change_amount: 0, // No change, just an alert
-          reason: 'adjustment',
-          notes: `OUT OF STOCK: ${product.name} is now out of stock.`
-        }, { transaction: t });
+      // --- NEW NOTIFICATION LOGIC ---
+      // Check if stock is now low or empty and create UI Notification
+      if (newStock <= product.min_stock_level) {
+        const isOutOfStock = newStock === 0;
+        
+        await createNotification({
+          title: isOutOfStock ? 'OUT OF STOCK' : 'LOW STOCK ALERT',
+          message: `${product.name} (SKU: ${product.barcode}) ${isOutOfStock ? 'is now empty' : `is running low: ${newStock} remaining`}.`,
+          type: isOutOfStock ? 'alert' : 'low_stock',
+        }, t);
       }
     }
+    await createNotification({
+      title: 'NEW SALE COMPLETED',
+      message: `Transaction ${transaction.transaction_number} processed by ${userName} for a total of ${total.toFixed(2)} FRW.`,
+      type: 'sale',
+    }, t);
 
     await t.commit();
 
@@ -171,6 +158,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
+
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
@@ -183,23 +172,22 @@ export async function GET(request: NextRequest) {
     const userId = decoded.id;
     const userRole = decoded.role;
 
-    // PARSE QUERY PARAMETERS
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = parseInt(searchParams.get('limit') || '100'); // Increased limit for history
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
     const offset = (page - 1) * limit;
 
-    // BUILD FILTER
     const where: any = {};
 
-    // ROLE-BASED ACCESS CONTROL
-    if (userRole !== 'admin' && userRole !== 'manager') {
+    // Restriction: Cashiers only see their own sales
+    if (userRole === "cashier") {
       where.created_by = userId;
     }
 
+    // Date Range Filtering
     if (startDate && endDate) {
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -209,7 +197,6 @@ export async function GET(request: NextRequest) {
       where.created_at = { [Op.between]: [start, end] };
     }
 
-    // EXECUTE QUERY
     const { count, rows } = await Transaction.findAndCountAll({
       where,
       limit,

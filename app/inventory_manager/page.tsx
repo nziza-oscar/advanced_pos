@@ -22,6 +22,7 @@ import { useModalStore } from '@/lib/store/modal-store';
 import { AddProductModal } from '@/components/products/AddProductModal';
 import { Button } from '@/components/ui/button';
 import { useUIStore } from '@/lib/store';
+import Titles from '@/components/layout/Titles';
 
 export default function InventoryManagerPage() {
   const [data, setData] = useState<any>(null);
@@ -173,10 +174,8 @@ export default function InventoryManagerPage() {
       <div className="space-y-10 pb-10">
         {/* Header with Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-bold text-primary tracking-tight">Inventory Overview</h1>
-            <p className="text-slate-400 font-medium">Monitor stock levels, track movements, and manage inventory.</p>
-          </div>
+         
+          <Titles title='Inventory Overview' description='Monitor stock levels, track movements, and manage inventory.'/>
           <div className="flex items-center gap-3">
             <button 
               onClick={handleRefresh}
@@ -201,7 +200,7 @@ export default function InventoryManagerPage() {
 
         {/* Inventory Metrics - Read-only display */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-  {inventoryMetrics.map((metric) => (
+  {inventoryMetrics.map((metric:any) => (
     <div
       key={metric.label}
       // Using rounded-xl and more saturated background colors
@@ -329,7 +328,7 @@ export default function InventoryManagerPage() {
               {data.lowStockAlerts?.slice(0, 5).map((alert: any, i: number) => (
                 <Link
                   key={i}
-                  href={`/inventory-manager/products/${alert.id}/restock`}
+                  href={`/inventory_manager/products/${alert.id}/restock`}
                   className="block p-4 bg-amber-50 rounded-2xl border border-amber-100 text-left hover:bg-amber-100 transition-colors"
                 >
                   <div className="flex items-center justify-between mb-2">

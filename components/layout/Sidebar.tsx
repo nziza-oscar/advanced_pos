@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation';
 import { 
   Home, Package, Receipt, BarChart3, 
   Settings, Users, LogOut, X, ShoppingBag, 
-  ChevronRight, LayoutDashboard, Boxes
+  ChevronRight, LayoutDashboard, Boxes,
+  Book
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
@@ -14,7 +15,7 @@ import { Logo } from '@/components/shared/Logo';
 const menuItems = [
   { href: '/inventory_manager', icon: LayoutDashboard, label: 'Overview', accent: 'text-blue-500', bg: 'hover:bg-blue-50' },
   { href: '/inventory_manager/products', icon: Package, label: 'Products', accent: 'text-sky-500', bg: 'hover:bg-sky-50' },
-  { href: '/inventory_manager/stock', icon: Boxes, label: 'Stock Levels', accent: 'text-indigo-500', bg: 'hover:bg-indigo-50' },
+  { href: '/inventory_manager/sales', icon: Book, label: 'Sales', accent: 'text-sky-500', bg: 'hover:bg-sky-50' },
   { href: '/inventory_manager/categories', icon: ShoppingBag, label: 'Categories', accent: 'text-cyan-500', bg: 'hover:bg-cyan-50' },
   { href: '/inventory_manager/statistics', icon: BarChart3, label: 'Statistics', accent: 'text-blue-600', bg: 'hover:bg-blue-50' },
   { href: '/inventory_manager/settings', icon: Settings, label: 'Settings', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
@@ -70,7 +71,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   href={item.href}
                   onClick={onClose}
                   className={`
-                    group relative flex items-center justify-between px-4 py-3 rounded-[1.5rem] transition-all duration-300
+                    group relative flex items-center justify-between px-4 py-2 rounded-[1.5rem] transition-all duration-300
                     ${isActive
                       ? 'bg-primary text-blue-200 shadow-[0_10px_25px_-10px_rgba(59,130,246,0.15)] ring-1 ring-blue-50'
                       : `text-slate-400 ${item.bg} hover:text-blue-500`

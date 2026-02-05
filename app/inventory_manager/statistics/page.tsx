@@ -21,6 +21,7 @@ import { toast } from 'sonner';
 import { SalesBar } from '@/components/charts/SalesBar';
 import { DateRangePicker } from '@/components/shared/DateRangePicker';
 import { Button } from '@/components/ui/button';
+import Titles from '@/components/layout/Titles';
 
 interface AdminStats {
   summary: {
@@ -305,10 +306,8 @@ const handleExportPDF = async () => {
     <div className="space-y-10 pb-10">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold title tracking-tight">System Analytics</h1>
-          <p className="text-slate-400 font-medium">Detailed performance report across all branches.</p>
-        </div>
+       
+        <Titles title='System Analytics' description='Detailed performance report across all branches.'/>
         <div className="flex items-center gap-3 flex-wrap">
           <DateRangePicker 
             dateRange={dateRange}

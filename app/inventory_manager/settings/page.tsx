@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import Titles from '@/components/layout/Titles';
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
@@ -38,10 +39,9 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-8 max-w-4xl">
-      <div>
-        <h1 className="text-2xl text-blue-600 tracking-tight">System Configuration</h1>
-        <p className="text-slate-500 text-sm">Manage your store preferences and security settings</p>
-      </div>
+      
+
+      <Titles title='System Configuration' description='Manage your store preferences and security settings' />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Navigation Tabs (Visual only) */}

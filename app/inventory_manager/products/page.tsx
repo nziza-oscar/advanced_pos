@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreVertical, Edit, Trash2, Eye, Package, ImageIcon } from 'lucide-react';
 import { useModalStore } from '@/lib/store/modal-store';
 import { toast } from 'sonner';
+import Titles from '@/components/layout/Titles';
 
 interface Product {
   id: string;
@@ -89,10 +90,8 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600">Manage your product inventory</p>
-        </div>
+        
+        <Titles title='Products' description='Manage your product inventory' />
         
         <Button onClick={() => openModal('add-product')} className="bg-blue-600 hover:bg-blue-700">
           <Package className="w-4 h-4 mr-2" />

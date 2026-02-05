@@ -72,7 +72,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={`
                     group relative flex items-center justify-between px-4 py-3 rounded-[1.5rem] transition-all duration-300
                     ${isActive
-                      ? 'bg-white text-blue-600 shadow-[0_10px_25px_-10px_rgba(59,130,246,0.15)] ring-1 ring-blue-50'
+                      ? 'bg-primary text-blue-200 shadow-[0_10px_25px_-10px_rgba(59,130,246,0.15)] ring-1 ring-blue-50'
                       : `text-slate-400 ${item.bg} hover:text-blue-500`
                     }
                   `}
@@ -81,7 +81,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     <div className={`
                       p-2.5 rounded-2xl transition-all duration-300
                       ${isActive 
-                        ? 'bg-blue-600 text-white rotate-[5deg]' 
+                        ? 'bg-blue-200 text-primary rotate-[5deg]' 
                         : `bg-white border border-blue-50 shadow-sm ${item.accent}`
                       }
                     `}>
@@ -93,7 +93,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   </div>
 
                   {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-200 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                   )}
                 </Link>
               );

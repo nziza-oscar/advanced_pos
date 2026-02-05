@@ -46,10 +46,7 @@ export function CashierHeader({ onMenuClick }: HeaderProps) {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  const [notifications] = useState([
-    { id: 1, title: 'Low Stock Alert', desc: 'Product "Milk" is below 5 units.', time: '2m ago' },
-    { id: 2, title: 'New Sale', desc: 'Transaction #4029 completed.', time: '15m ago' },
-  ]);
+ 
 
   const items = useCartStore((state) => state.items);
   const removeItem = useCartStore((state) => state.removeItem);
@@ -183,41 +180,7 @@ export function CashierHeader({ onMenuClick }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="relative p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none">
-                <Bell className="w-5 h-5 text-slate-600" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] text-white ring-2 ring-white">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80 shadow-xl border-slate-200">
-              <DropdownMenuLabel className="flex justify-between items-center px-4 py-3">
-                <span className="text-slate-900">Notifications</span>
-                <button className="text-[10px] text-blue-600 hover:underline">Mark all as read</button>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="max-h-80 overflow-y-auto">
-                {notifications.map((notif) => (
-                  <DropdownMenuItem key={notif.id} className="flex flex-col items-start gap-1 p-4 cursor-pointer border-b border-slate-50 last:border-0">
-                    <p className="text-xs text-slate-900">{notif.title}</p>
-                    <p className="text-[11px] text-slate-500 leading-relaxed">{notif.desc}</p>
-                    <p className="text-[9px] text-blue-500 mt-1 uppercase tracking-wide">{notif.time}</p>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-              <DropdownMenuSeparator />
-              <Link href="/notifications" className="w-full">
-                <DropdownMenuItem className="text-center justify-center text-xs text-slate-600 py-3 cursor-pointer">
-                  View All Activity
-                </DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
+        
           <div className="h-6 w-px bg-slate-200 mx-1 hidden sm:block" />
 
           <DropdownMenu>

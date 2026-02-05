@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useCartStore, useCartSummary } from '@/lib/store/cart-store';
 import { CheckoutModal } from '@/components/pos/CheckoutModal';
+import Titles from '@/components/layout/Titles';
 
 
 export default function CashierPage() {
@@ -38,47 +39,86 @@ export default function CashierPage() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full]">
+   <div>
+   
+
+    <Titles title=' Products List' description='Browse and add products to the current transaction'/>
+
+     <div className="flex flex-col-reverse lg:grid lg:grid-cols-12 gap-6 h-full">
       
       {/* 1. Product Selection Zone (Left) */}
       <div className="lg:col-span-8 flex flex-col gap-4">
-        <div className="flex gap-4 items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <Input 
-              placeholder="Search by name or scan barcode..." 
-              className="pl-10 h-12 bg-white rounded-xl border border-slate-400 shadow-sm focus:ring-2 focus:ring-blue-500"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+        
+
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 ">
+         {filteredProducts.map((product) => {
+  const isOutOfStock = Number(product.stock_quantity) <= 0;
+
+  return (
+    <button
+      key={product.id}
+      disabled={isOutOfStock}
+      onClick={() => addItem(product)}
+      className={`group flex flex-col bg-white p-[5px] rounded-xl border transition-all text-left relative overflow-hidden h-full
+        ${isOutOfStock 
+          ? 'opacity-60 cursor-not-allowed border-slate-100' 
+          : 'border-slate-400 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10 active:scale-[0.98]'
+        }`}
+    >
+      {/* Product Image Container */}
+      <div className="aspect-square bg-slate-50 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
+        {product.image_url ? (
+          <img 
+            src={product.image_url} 
+            alt={product.name} 
+            className={`w-full h-full object-cover transition-transform duration-500 ${!isOutOfStock && 'group-hover:scale-110'}`} 
+          />
+        ) : (
+          <Package className="w-10 h-10 text-slate-200" />
+        )}
+
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
+            <span className="bg-white text-slate-900 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-xl">
+              Sold Out
+            </span>
           </div>
-         
+        )}
+      </div>
+
+      {/* Product Info */}
+      <div className="px-1 flex flex-col flex-1">
+        <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug ">
+          {product.name}
+        </h3>
+        
+        <div className="flex items-center gap-2 mt-1 ">
+          <div className={`h-1.5 w-1.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
+          <p className="text-[11px] font-medium text-slate-400">
+            {isOutOfStock ? 'No stock available' : `${product.stock_quantity} units remaining`}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 overflow-hidden pr-2">
-          {filteredProducts.map((product) => (
-            <button
-              key={product.id}
-              onClick={() => addItem(product)}
-              className="group flex flex-col bg-white p-3 rounded-3xl border border-transparent hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/5 transition-all text-left relative overflow-hidden"
-            >
-              <div className="aspect-square bg-slate-50 rounded-2xl mb-3 flex items-center justify-center overflow-hidden">
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                ) : (
-                  <Package className="w-8 h-8 text-slate-200" />
-                )}
-              </div>
-              <h3 className="text-sm font-semibold text-slate-800 line-clamp-1">{product.name}</h3>
-              <p className="text-xs text-slate-400 mt-1 mb-2">{product.stock_quantity} units left</p>
-              <div className="flex justify-between items-center mt-auto">
-                <span className="text-blue-600 font-bold text-sm">{Number(product.price).toLocaleString()} FRW</span>
-                <div className="h-8 w-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <Plus className="w-4 h-4" />
-                </div>
-              </div>
-            </button>
-          ))}
+        {/* Pricing & Add Button */}
+        <div className="flex justify-between items-center mt-auto pt-2">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Price</span>
+            <span className="text-blue-600 font-black text-base tracking-tight">
+              {Number(product.price).toLocaleString()} <span className="text-[10px]">FRW</span>
+            </span>
+          </div>
+
+          {!isOutOfStock && (
+            <div className="h-10 w-10 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:rotate-90 transition-all duration-300">
+              <Plus className="w-5 h-5" />
+            </div>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+})}
 
         </div>
       </div>
@@ -174,5 +214,6 @@ export default function CashierPage() {
       </div>
       <CheckoutModal open={open} onClose={()=>setOpen((prev)=>!prev)}/>
     </div>
+   </div>
   );
 }

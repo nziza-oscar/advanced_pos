@@ -20,6 +20,7 @@ import {
   Layers
 } from 'lucide-react';
 import { useUIStore } from '@/lib/store/ui-store';
+import Titles from '@/components/layout/Titles';
 
 interface Category {
   id: string;
@@ -85,10 +86,9 @@ export default function CategoriesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Categories</h1>
-          <p className="text-slate-500 text-sm">Manage and organize your product groups</p>
-        </div>
+      
+
+        <Titles title='Categories' description='Manage and organize your product groups'/>
         
         <Button onClick={() => openModal('add-category')} >
           <Plus className="w-4 h-4 mr-2" />

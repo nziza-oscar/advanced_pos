@@ -28,6 +28,7 @@ import {
 import { useCartStore, useCartSummary } from '@/lib/store/cart-store';
 import Link from 'next/link';
 import { CheckoutModal } from '../pos/CheckoutModal';
+import ProductSearch from '../products/ProductSearch';
 
 interface UserProfile {
   id: string;
@@ -87,14 +88,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <Menu className="w-5 h-5" />
           </Button>
 
-          <div className="hidden md:flex relative w-full max-w-sm items-center">
-            <Search className="absolute left-2.5 h-4 w-4 text-slate-400" />
-            <Input
-              type="search"
-              placeholder="Search products or orders..."
-              className="pl-9 h-9 w-full bg-slate-50 border-slate-200 focus-visible:ring-blue-500"
-            />
-          </div>
+         <ProductSearch/>
         </div>
 
         <div className="flex items-center gap-2 sm:gap-4">

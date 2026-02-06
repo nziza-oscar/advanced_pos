@@ -3,13 +3,14 @@ import { User } from '@/lib/database/models';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { full_name, email, username, role, is_active } = body;
 
-    const user = await User.findByPk(params.id);
+    const user = await User.findByPk(id);
 
     if (!user) {
       return NextResponse.json(
@@ -50,10 +51,11 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await User.findByPk(params.id);
+    const { id } = await params;
+    const user = await User.findByPk(id);
 
     if (!user) {
       return NextResponse.json(
@@ -62,15 +64,14 @@ export async function DELETE(
       );
     }
 
-    // You might want to soft delete instead
+    // Implementing soft delete by setting is_active to false
     await user.update({ is_active: false });
     
-    // Or hard delete:
-    // await user.destroy();
+    // If you prefer a hard delete, use: await user.destroy();
 
     return NextResponse.json({
       success: true,
-      message: 'Staff member deleted successfully'
+      message: 'Staff member deactivated successfully'
     });
 
   } catch (error: any) {

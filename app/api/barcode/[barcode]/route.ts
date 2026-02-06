@@ -1,12 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Product from '@/lib/database/models/Product'; 
+import Product from '@/lib/database/models/Product';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { barcode: string } }
+  { params }: { params: Promise<{ barcode: string }> }
 ) {
   try {
-    const { barcode } = params;
+    // Await the params promise
+    const { barcode } = await params;
+
+    if (!barcode) {
+      return NextResponse.json(
+        { success: false, message: 'Barcode is required' },
+        { status: 400 }
+      );
+    }
 
     // Search for product by barcode
     const product = await Product.findOne({
@@ -30,6 +38,7 @@ export async function GET(
         product_id: product.id,
         barcode: product.barcode,
         name: product.name,
+        // Ensure price is handled as a number
         price: parseFloat(product.price as unknown as string), 
         max_quantity: product.stock_quantity,
         image_url: product.image_url,

@@ -69,7 +69,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground mt-4 text-sm">Sign in to your POS account</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
             <Label htmlFor="username" className="text-xs font-bold uppercase tracking-widest">
               Username
@@ -134,7 +134,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="text-center border-t border-muted py-6 mt-6">
+        <div className="text-center border-t border-muted py-2">
           <p className="text-xs text-muted-foreground uppercase tracking-tight">
             New to the platform?{' '}
             <Link 

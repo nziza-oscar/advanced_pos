@@ -17,8 +17,8 @@ const menuItems = [
   { href: '/inventory_manager/products', icon: Package, label: 'Products', accent: 'text-sky-500', bg: 'hover:bg-sky-50' },
   { href: '/inventory_manager/sales', icon: Book, label: 'Sales', accent: 'text-sky-500', bg: 'hover:bg-sky-50' },
   { href: '/inventory_manager/categories', icon: ShoppingBag, label: 'Categories', accent: 'text-cyan-500', bg: 'hover:bg-cyan-50' },
-  { href: '/inventory_manager/statistics', icon: BarChart3, label: 'Statistics', accent: 'text-blue-600', bg: 'hover:bg-blue-50' },
-  { href: '/inventory_manager/settings', icon: Settings, label: 'Settings', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
+  { href: '/inventory_manager/statistics', icon: BarChart3, label: 'Reports', accent: 'text-blue-600', bg: 'hover:bg-blue-50' },
+  // { href: '/inventory_manager/settings', icon: Settings, label: 'Settings', accent: 'text-slate-400', bg: 'hover:bg-slate-100' },
 ];
 
 interface SidebarProps {
@@ -74,7 +74,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     group relative flex items-center justify-between px-4 py-2 rounded-[1.5rem] transition-all duration-300
                     ${isActive
                       ? 'bg-primary text-blue-200 shadow-[0_10px_25px_-10px_rgba(59,130,246,0.15)] ring-1 ring-blue-50'
-                      : `text-slate-400 ${item.bg} hover:text-blue-500`
+                      : `text-slate-500 ${item.bg} hover:text-blue-500`
                     }
                   `}
                 >
@@ -104,10 +104,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* 3. FOOTER */}
         <div className="absolute bottom-0 left-0 right-0 p-8">
-          <div className="bg-white rounded-[2rem] p-4 border border-blue-50 shadow-sm">
+          <div className="bg-white rounded-[2rem] p-2 border border-blue-50 shadow-sm">
             <Button
               variant="ghost"
-              className="w-full h-12 rounded-2xl text-slate-400 hover:bg-rose-50 hover:text-rose-500 transition-all duration-300 flex items-center justify-center gap-3 group"
+              className="w-full py-2 rounded-xl text-slate-200 bg-rose-500 hover:text-rose-500 
+              transition-all duration-300 flex items-center justify-center gap-3 group"
               onClick={() => window.location.href = '/login'}
             >
               <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />

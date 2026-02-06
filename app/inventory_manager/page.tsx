@@ -175,7 +175,7 @@ export default function InventoryManagerPage() {
         {/* Header with Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
          
-          <Titles title='Inventory Overview' description='Monitor stock levels, track movements, and manage inventory.'/>
+          <Titles title='Inventory Management' description='Monitor stock levels, track movements, and manage inventory.'/>
           <div className="flex items-center gap-3">
             <button 
               onClick={handleRefresh}
@@ -266,7 +266,7 @@ export default function InventoryManagerPage() {
                 </div>
               </div>
               <Link 
-                href="/inventory-manager/activity" 
+                href="/inventory_manager/activity" 
                 className="text-sm font-medium text-blue-600 hover:text-blue-700"
               >
                 View All

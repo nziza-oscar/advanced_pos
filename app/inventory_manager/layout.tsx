@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { ModalProvider } from '@/components/shared/ModalProvider';
+import { Footer } from '@/components/layout/Footer';
 
 export default function DashboardLayout({
   children,
@@ -27,6 +28,7 @@ export default function DashboardLayout({
           </div>
           <ModalProvider/>
         </main>
+        <Footer/>
       </div>
 
      

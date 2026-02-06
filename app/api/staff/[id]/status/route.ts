@@ -3,13 +3,15 @@ import { User } from '@/lib/database/models';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Await params to comply with Next.js 15+ requirements
+    const { id } = await params;
     const body = await request.json();
     const { is_active } = body;
 
-    const user = await User.findByPk(params.id);
+    const user = await User.findByPk(id);
 
     if (!user) {
       return NextResponse.json(

@@ -93,7 +93,7 @@ export default function ProductsPage() {
         
         <Titles title='Products' description='Manage your product inventory' />
         
-        <Button onClick={() => openModal('add-product')} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => openModal('add-product')} className="bg-primary cursor-pointer hover:bg-blue-700">
           <Package className="w-4 h-4 mr-2" />
           Add Product
         </Button>
@@ -179,9 +179,7 @@ export default function ProductsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleView(product)}>
-                          <Eye className="w-4 h-4 mr-2" /> Quick Sale
-                        </DropdownMenuItem>
+                      
                         <DropdownMenuItem onClick={() => handleEdit(product)}>
                           <Edit className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>

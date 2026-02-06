@@ -164,7 +164,7 @@ export default function InventoryManagerPage() {
       title: 'View Reports', 
       icon: BarChart3, 
       color: 'bg-purple-500 hover:bg-purple-600',
-      href: '/inventory-manager/reports'
+      href: '/inventory_manager/statistics'
     },
 
   ];

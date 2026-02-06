@@ -307,7 +307,7 @@ const handleExportPDF = async () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
        
-        <Titles title='System Analytics' description='Detailed performance report across all branches.'/>
+        <Titles title='General Reports' description='Detailed performance report across all branches.'/>
         <div className="flex items-center gap-3 flex-wrap">
           <DateRangePicker 
             dateRange={dateRange}

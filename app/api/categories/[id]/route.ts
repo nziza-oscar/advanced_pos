@@ -4,10 +4,10 @@ import { Product } from '@/lib/database/models';
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     
     const category = await Category.findByPk(id);
@@ -34,18 +34,17 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const category = await Category.findByPk(id);
     if (!category) {
       return NextResponse.json({ error: 'Category not found' }, { status: 404 });
     }
 
-    // Optional: Business logic to prevent orphaned products
-    // You could set category_id to NULL for all products in this category
+    // Business logic to prevent orphaned products
     await Product.update(
       { category_id: null },
       { where: { category_id: id } }

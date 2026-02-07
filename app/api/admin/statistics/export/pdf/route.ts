@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Transaction, sequelize } from '@/lib/database/models';
 import { Op, QueryTypes } from 'sequelize';
-import { PDFDocument } from './PDFDocument';
+import { generatePDFStream } from './PDFDocument';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,27 +9,27 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
 
-    // Parse dates
     const start = startDate ? new Date(startDate) : new Date();
-    start.setDate(start.getDate() - 30);
+    if (!startDate) start.setDate(start.getDate() - 30);
     start.setHours(0, 0, 0, 0);
 
     const end = endDate ? new Date(endDate) : new Date();
     end.setHours(23, 59, 59, 999);
 
-    // Fetch all data needed for the report
     const reportData = await fetchReportData(start, end);
 
-    // Generate PDF
-    const pdfStream = await PDFDocument(reportData, {
+    
+
+  // Generate PDF Stream
+    const pdfStream = await generatePDFStream(reportData, {
       startDate: startDate || 'Last 30 days',
       endDate: endDate || 'Today'
     });
 
-    // Convert stream to buffer
-    const chunks: Uint8Array[] = [];
+    // Convert stream to buffer with correct typing
+    const chunks: any[] = [];
     for await (const chunk of pdfStream) {
-      chunks.push(chunk);
+      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
     }
     const pdfBuffer = Buffer.concat(chunks);
 
@@ -37,18 +37,15 @@ export async function GET(request: NextRequest) {
     return new Response(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="admin-report-${startDate || 'latest'}-to-${endDate || 'now'}.pdf"`
+        'Content-Disposition': `attachment; filename="admin-report-${new Date().getTime()}.pdf"`,
+        'Content-Length': pdfBuffer.length.toString(),
       }
     });
 
   } catch (error: any) {
     console.error('PDF export error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to generate PDF report',
-        details: error.message 
-      },
+      { success: false, error: 'Failed to generate PDF report', details: error.message },
       { status: 500 }
     );
   }
@@ -69,7 +66,7 @@ async function fetchReportData(start: Date, end: Date) {
     raw: true
   }) as any;
 
-  // 2. Daily Sales (last 14 days for PDF)
+  // 2. Daily Sales
   const dailySales = await sequelize.query(`
     SELECT 
       DATE(t.created_at) as date,
@@ -82,12 +79,9 @@ async function fetchReportData(start: Date, end: Date) {
     GROUP BY DATE(t.created_at)
     ORDER BY date DESC
     LIMIT 14
-  `, {
-    replacements: { start, end },
-    type: QueryTypes.SELECT
-  }) as any[];
+  `, { replacements: { start, end }, type: QueryTypes.SELECT }) as any[];
 
-  // 3. Top Products
+  // 3. Top Products (Restoring category field)
   const topProducts = await sequelize.query(`
     SELECT 
       p.name,
@@ -104,17 +98,11 @@ async function fetchReportData(start: Date, end: Date) {
     GROUP BY p.id, p.name, p.category_id, c.name
     ORDER BY revenue DESC
     LIMIT 10
-  `, {
-    replacements: { start, end },
-    type: QueryTypes.SELECT
-  }) as any[];
+  `, { replacements: { start, end }, type: QueryTypes.SELECT }) as any[];
 
   // 4. Payment Methods
   const paymentMethods = await Transaction.findAll({
-    where: {
-      created_at: { [Op.between]: [start, end] },
-      status: 'completed'
-    },
+    where: { created_at: { [Op.between]: [start, end] }, status: 'completed' },
     attributes: [
       'payment_method',
       [sequelize.fn('COUNT', sequelize.col('id')), 'count'],

@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
 
     // Combine and sort activities
     const activities = [
-      ...recentTransactions.map(tx => ({
+      ...recentTransactions.map((tx:any) => ({
         type: 'transaction' as const,
         id: tx.id,
         title: `Transaction ${tx.transaction_number}`,
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         status: tx.status,
         icon: 'receipt'
       })),
-      ...recentStockChanges.map(log => ({
+      ...recentStockChanges.map((log:any) => ({
         type: 'stock' as const,
         id: log.id,
         title: `${log.change_amount > 0 ? 'Stock Added' : 'Stock Reduced'}`,

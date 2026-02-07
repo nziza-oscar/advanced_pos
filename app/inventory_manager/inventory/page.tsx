@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, Package, Plus, Search } from 'lucide-react';
+import { AlertTriangle, Package, Plus, Search, Loader2 } from 'lucide-react';
 import { useModalStore } from '@/lib/store/modal-store';
 
 interface Product {
@@ -21,6 +21,7 @@ export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const openModal = useModalStore((state) => state.openModal);
 
   useEffect(() => {
     fetchProducts();
@@ -36,7 +37,7 @@ export default function InventoryPage() {
         setProducts(data.data || []);
       }
     } catch (error) {
-      console.error('Failed to load inventory');
+      console.error('Failed to load inventory.');
     } finally {
       setLoading(false);
     }
@@ -57,10 +58,15 @@ export default function InventoryPage() {
     return 'In Stock';
   };
 
-  const getStockColor = (quantity: number, minLevel: number) => {
+  /**
+   * Fixed Variant Mapping
+   * Maps status logic to valid Shadcn Badge variants: 
+   * "default" | "secondary" | "destructive" | "outline"
+   */
+  const getStockColor = (quantity: number, minLevel: number): "default" | "secondary" | "destructive" | "outline" => {
     if (quantity === 0) return 'destructive';
-    if (quantity <= minLevel) return 'warning';
-    return 'success';
+    if (quantity <= minLevel) return 'secondary'; // Using secondary for "Warning"
+    return 'outline'; // Using outline for "Success/Normal"
   };
 
   return (
@@ -68,10 +74,10 @@ export default function InventoryPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-          <p className="text-gray-600">Monitor stock levels and replenish products</p>
+          <p className="text-gray-600">Monitor stock levels and replenish products.</p>
         </div>
         
-        <Button onClick={() => useModalStore.getState().openModal('add-product')}>
+        <Button onClick={() => openModal('add-product')}>
           <Plus className="w-4 h-4 mr-2" />
           Add Product
         </Button>
@@ -87,28 +93,30 @@ export default function InventoryPage() {
                 Low Stock Alert
               </h3>
               <p className="text-yellow-700 text-sm mt-1">
-                {lowStockProducts.length} product{lowStockProducts.length !== 1 ? 's' : ''} need{lowStockProducts.length === 1 ? 's' : ''} restocking
+                {lowStockProducts.length} product{lowStockProducts.length !== 1 ? 's' : ''} need{lowStockProducts.length === 1 ? 's' : ''} restocking.
               </p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setSearch('')}>
               View All
             </Button>
           </div>
         </div>
       )}
 
-      {/* Search */}
+      {/* Search Bar */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex gap-3">
-          <Input
-            placeholder="Search inventory..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1"
-          />
-          <Button>
-            <Search className="w-4 h-4 mr-2" />
-            Search
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search inventory by name or barcode..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button onClick={fetchProducts} variant="secondary">
+            Refresh
           </Button>
         </div>
       </div>
@@ -116,8 +124,8 @@ export default function InventoryPage() {
       {/* Inventory Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+          <div className="p-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
             <p className="mt-2 text-gray-600">Loading inventory...</p>
           </div>
         ) : (
@@ -130,7 +138,7 @@ export default function InventoryPage() {
                   <TableHead>Current Stock</TableHead>
                   <TableHead>Min Level</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Action</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -143,11 +151,11 @@ export default function InventoryPage() {
                       {product.name}
                     </TableCell>
                     <TableCell>
-                      <span className="font-medium">
+                      <span className={`font-bold ${product.stock_quantity <= product.min_stock_level ? 'text-red-600' : 'text-gray-900'}`}>
                         {product.stock_quantity}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-gray-500">
                       {product.min_stock_level}
                     </TableCell>
                     <TableCell>
@@ -155,7 +163,7 @@ export default function InventoryPage() {
                         {getStockStatus(product.stock_quantity, product.min_stock_level)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
                       <Button variant="outline" size="sm">
                         Restock
                       </Button>
@@ -166,8 +174,11 @@ export default function InventoryPage() {
             </Table>
 
             {filteredProducts.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
-                {search ? 'No products match your search' : 'No products in inventory'}
+              <div className="p-12 text-center text-gray-500">
+                <Package className="w-12 h-12 mx-auto mb-4 text-gray-200" />
+                <p className="text-lg font-medium">
+                  {search ? 'No products match your search.' : 'No products in inventory.'}
+                </p>
               </div>
             )}
           </>

@@ -45,7 +45,7 @@ export function PaymentModal() {
           barcode: item.barcode,
           product_name: item.name,
           quantity: item.quantity,
-          unit_price: item.price,
+          unit_price: item.unit_price,
           discount_amount: 0,
         })),
         subtotal: totalAmount,

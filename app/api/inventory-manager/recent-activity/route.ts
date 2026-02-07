@@ -29,7 +29,7 @@ export async function GET() {
       limit: 10
     });
 
-    const formattedActivities = recentActivities.map(log => {
+    const formattedActivities = recentActivities.map((log:any) => {
       const timeDiff = Date.now() - new Date(log.created_at).getTime();
       const minutes = Math.floor(timeDiff / (1000 * 60));
       const hours = Math.floor(timeDiff / (1000 * 60 * 60));

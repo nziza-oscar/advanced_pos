@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     await transaction.update({
       payment_method: 'cash',
       amount_paid: parseFloat(amount_paid),
-      change_amount: parseFloat(amount_paid) - parseFloat(transaction.get('total_amount')),
+      change_amount: parseFloat(amount_paid) - transaction.get('total_amount'),
       customer_name: customer_name || transaction.get('customer_name'),
       customer_phone: customer_phone || transaction.get('customer_phone'),
       notes: notes || transaction.get('notes'),
@@ -46,9 +46,9 @@ export async function POST(request: NextRequest) {
       data: {
         transaction_id: transaction.get('id'),
         transaction_number: transaction.get('transaction_number'),
-        total_amount: parseFloat(transaction.get('total_amount')),
-        amount_paid: parseFloat(transaction.get('amount_paid')),
-        change_amount: parseFloat(transaction.get('change_amount'))
+        total_amount: transaction.get('total_amount'),
+        amount_paid: transaction.get('amount_paid'),
+        change_amount:transaction.get('change_amount')
       }
     });
 

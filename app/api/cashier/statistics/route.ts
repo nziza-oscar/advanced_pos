@@ -56,7 +56,7 @@ export async function GET(req: Request) {
         raw: true
       }),
 
-      // FIXED: Using MySQL HOUR() function instead of DATE_PART
+      // FIXED: Using literal with 'as any' to satisfy the Group type requirement while keeping MySQL HOUR()
       Transaction.findAll({
         where: {
           created_by: user.id,
@@ -64,18 +64,18 @@ export async function GET(req: Request) {
           created_at: { [Op.gte]: startOfDay }
         },
         attributes: [
-          // Using literal for MySQL HOUR() function
           [literal('HOUR(created_at)'), 'hour'],
           [fn('COALESCE', fn('SUM', col('total_amount')), 0), 'total']
         ],
-        group: [literal('HOUR(created_at)')],
+        group: [literal('HOUR(created_at)') as any],
         order: [[literal('HOUR(created_at)'), 'ASC']],
         raw: true
       })
     ]);
 
+    // Maintaining your full 24-hour data mapping logic
     const hourlyData = Array.from({ length: 24 }, (_, i) => {
-      const hourData = hourlyRaw.find((item: any) => parseInt(item.hour) === i);
+      const hourData = (hourlyRaw as any[]).find((item: any) => parseInt(item.hour) === i);
       return {
         time: `${i % 12 || 12} ${i >= 12 ? 'PM' : 'AM'}`,
         hour: i,
@@ -83,12 +83,14 @@ export async function GET(req: Request) {
       };
     });
 
+    // Maintaining your exact payment method breakdown logic
     const payMethods = { cash: 0, momo: 0, card: 0, bank: 0 };
-    payments.forEach((p: any) => {
+    (payments as any[]).forEach((p: any) => {
       const key = p.payment_method.toLowerCase() as keyof typeof payMethods;
       if (payMethods[key] !== undefined) payMethods[key] = Number(p.amount || 0);
     });
 
+    // Returning your full summary, payments, and hourly objects
     return NextResponse.json({
       success: true,
       data: {

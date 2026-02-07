@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Barcode from '@/lib/database/models/Barcode';
+import Barcode, { BarcodeStatus } from '@/lib/database/models/Barcode';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         startId = lastBarcode.barcode_id + 1;
       }
 
-      // Generate barcodes
+      // Generate barcodes array with explicit typing to satisfy the model
       const barcodes = [];
       for (let i = 0; i < count; i++) {
         const barcodeId = startId + i;
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         barcodes.push({
           barcode_id: barcodeId,
           barcode: barcodeValue,
-          status: 'available'
+          status: BarcodeStatus.AVAILABLE // Using the constant ensures the correct type
         });
       }
 
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
       // Rollback transaction on error
-      await transaction.rollback();
+      if (transaction) await transaction.rollback();
       throw error;
     }
 

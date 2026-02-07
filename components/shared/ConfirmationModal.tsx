@@ -7,6 +7,8 @@ import { AlertTriangle, CheckCircle } from 'lucide-react';
 
 export function ConfirmationModal() {
   const { isOpen, type, data, closeModal } = useModalStore();
+  
+  // Only show if the modal is open AND the type is confirmation
   const isOpenModal = isOpen && type === 'confirmation';
 
   const handleConfirm = () => {
@@ -23,14 +25,12 @@ export function ConfirmationModal() {
     closeModal();
   };
 
-  if (!isOpenModal) return null;
-
   return (
     <Dialog open={isOpenModal} onOpenChange={closeModal}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {data?.title?.includes('Delete') || data?.title?.includes('Warning') ? (
+            {data?.title?.toLowerCase().includes('delete') || data?.title?.toLowerCase().includes('warning') ? (
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
             ) : (
               <CheckCircle className="w-5 h-5 text-green-500" />
@@ -58,7 +58,7 @@ export function ConfirmationModal() {
             type="button"
             onClick={handleConfirm}
             className="flex-1"
-            variant={data?.title?.includes('Delete') ? 'destructive' : 'default'}
+            variant={data?.title?.toLowerCase().includes('delete') ? 'destructive' : 'default'}
           >
             {data?.confirmText || 'Confirm'}
           </Button>

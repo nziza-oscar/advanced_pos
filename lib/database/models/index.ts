@@ -1,3 +1,4 @@
+// index.js
 import sequelize from '../connection';
 import Product from './Product';
 import Category from './Category';

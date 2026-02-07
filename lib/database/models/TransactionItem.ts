@@ -1,5 +1,7 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
 import sequelize from '../connection';
+import Product from './Product';
+import Transaction from './Transaction';
 
 class TransactionItem extends Model<InferAttributes<TransactionItem>, InferCreationAttributes<TransactionItem>> {
   declare id: CreationOptional<string>;
@@ -7,7 +9,7 @@ class TransactionItem extends Model<InferAttributes<TransactionItem>, InferCreat
   declare product_id: string;
   declare barcode: string;
   declare product_name: string;
-  declare product_image: string;
+  declare product_image: string | null;
   declare quantity: number;
   declare unit_price: number;
   declare total_price: number;
@@ -15,6 +17,9 @@ class TransactionItem extends Model<InferAttributes<TransactionItem>, InferCreat
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
 
+  // Virtual associations for TypeScript visibility
+  declare product?: NonAttribute<Product>;
+  declare transaction?: NonAttribute<Transaction>;
 }
 
 TransactionItem.init({
@@ -31,10 +36,9 @@ TransactionItem.init({
     type: DataTypes.UUID,
     allowNull: false
   },
-  product_image:{
-   type:DataTypes.STRING,
-   allowNull:true
-
+  product_image: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   barcode: {
     type: DataTypes.STRING(100),
@@ -68,7 +72,6 @@ TransactionItem.init({
   updated_at: DataTypes.DATE
 }, {
   sequelize,
-  tableName: 'transaction_items',
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
@@ -77,7 +80,5 @@ TransactionItem.init({
     { fields: ['product_id'] }
   ]
 });
-
-
 
 export default TransactionItem;

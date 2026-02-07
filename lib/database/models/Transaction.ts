@@ -1,5 +1,7 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
 import sequelize from '../connection';
+import TransactionItem from './TransactionItem';
+import User from './User';
 
 export const PaymentMethod = {
   CASH: 'cash',
@@ -37,6 +39,10 @@ class Transaction extends Model<InferAttributes<Transaction>, InferCreationAttri
   declare created_by: string | null;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
+  // Virtual associations for TypeScript visibility
+  declare items?: NonAttribute<TransactionItem[]>;
+  declare cashier?: NonAttribute<User>;
 }
 
 Transaction.init({
@@ -128,5 +134,5 @@ Transaction.init({
     { fields: ['status'] }
   ]
 });
- export default Transaction
- 
+
+export default Transaction;

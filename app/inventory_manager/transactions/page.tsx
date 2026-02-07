@@ -5,8 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Receipt, Search, Download, Eye } from 'lucide-react';
-import { useModalStore } from '@/lib/store/modal-store';
+import { Search, Download, Eye, Loader2, PackageX } from 'lucide-react';
 import { TransactionDetailModal } from '@/components/pos/TransactionDetailModal';
 
 interface Transaction {
@@ -23,15 +22,14 @@ export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     fetchTransactions();
   }, []);
 
-
-  const handleViewDetails = (transaction: any) => {
+  const handleViewDetails = (transaction: Transaction) => {
     setSelectedTransaction(transaction);
     setIsModalOpen(true);
   };
@@ -46,32 +44,35 @@ export default function TransactionsPage() {
         setTransactions(data.data || []);
       }
     } catch (error) {
-      console.error('Failed to load transactions');
+      console.error('Failed to load transactions.');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'pending': return 'warning';
+  /**
+   * Fixed Status Color mapping to match Shadcn Badge variants.
+   * "success" and "warning" are replaced with "outline" and "secondary".
+   */
+  const getStatusColor = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status.toLowerCase()) {
+      case 'completed': return 'outline'; // Standard for success in many shadcn setups
+      case 'pending': return 'secondary'; // Standard for warning/neutral
       case 'cancelled': return 'destructive';
-      default: return 'secondary';
+      default: return 'default';
     }
   };
 
-  const getPaymentMethodColor = (method: string) => {
-    switch (method) {
+  const getPaymentMethodColor = (method: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (method.toLowerCase()) {
       case 'cash': return 'default';
       case 'momo': return 'secondary';
       default: return 'outline';
     }
   };
 
-
   const filteredTransactions = transactions.filter(transaction =>
-    transaction.transaction_number.includes(search) ||
+    transaction.transaction_number.toLowerCase().includes(search.toLowerCase()) ||
     (transaction.customer_name || '').toLowerCase().includes(search.toLowerCase())
   );
 
@@ -80,7 +81,7 @@ export default function TransactionsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-          <p className="text-gray-600">View sales history and receipts</p>
+          <p className="text-gray-600">View sales history and receipts.</p>
         </div>
         
         <div className="flex gap-3">
@@ -91,28 +92,30 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search Bar */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex gap-3">
-          <Input
-            placeholder="Search by transaction number or customer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1"
-          />
-          <Button>
-            <Search className="w-4 h-4 mr-2" />
-            Search
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search by transaction number or customer..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Button onClick={fetchTransactions} variant="secondary">
+            Refresh
           </Button>
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {/* Transactions Table Section */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-            <p className="mt-2 text-gray-600">Loading transactions...</p>
+          <div className="p-12 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="mt-2 text-gray-600 font-medium">Loading transactions...</p>
           </div>
         ) : (
           <>
@@ -125,20 +128,20 @@ export default function TransactionsPage() {
                   <TableHead>Payment</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredTransactions.map((transaction) => (
                   <TableRow key={transaction.id}>
-                    <TableCell className="font-mono font-medium">
+                    <TableCell className="font-mono font-medium text-sm">
                       {transaction.transaction_number}
                     </TableCell>
                     <TableCell>
                       {transaction.customer_name || 'Walk-in Customer'}
                     </TableCell>
-                    <TableCell className="font-medium">
-                      {Number(transaction.total_amount).toFixed(2)} FRW
+                    <TableCell className="font-bold text-slate-900">
+                      {Number(transaction.total_amount).toLocaleString()} FRW
                     </TableCell>
                     <TableCell>
                       <Badge variant={getPaymentMethodColor(transaction.payment_method)}>
@@ -147,14 +150,14 @@ export default function TransactionsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusColor(transaction.status)}>
-                        {transaction.status}
+                        {transaction.status.toUpperCase()}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-slate-500 text-sm">
                       {new Date(transaction.created_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>
-                     <Button 
+                    <TableCell className="text-right">
+                      <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => handleViewDetails(transaction)} 
@@ -168,20 +171,24 @@ export default function TransactionsPage() {
               </TableBody>
             </Table>
 
-
-<TransactionDetailModal 
-        transaction={selectedTransaction}
-        open={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      />
             {filteredTransactions.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
-                {search ? 'No transactions match your search' : 'No transactions found'}
+              <div className="p-12 text-center text-gray-500">
+                <PackageX className="w-12 h-12 mx-auto mb-4 text-gray-200" />
+                <p className="text-lg font-medium">
+                  {search ? 'No transactions match your search.' : 'No transactions found.'}
+                </p>
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* Modal is rendered once outside the table for performance */}
+      <TransactionDetailModal 
+        transaction={selectedTransaction}
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 }

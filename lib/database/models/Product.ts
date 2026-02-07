@@ -1,5 +1,7 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
 import sequelize from '../connection';
+import Category from './Category';
+import StockLog from './StockLog';
 
 class Product extends Model<InferAttributes<Product>, InferCreationAttributes<Product>> {
   declare id: CreationOptional<string>;
@@ -15,6 +17,10 @@ class Product extends Model<InferAttributes<Product>, InferCreationAttributes<Pr
   declare is_active: CreationOptional<boolean>;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
+  // Virtual association properties for TypeScript visibility
+  declare category?: NonAttribute<Category>;
+  declare stock_logs?: NonAttribute<StockLog[]>;
 }
 
 Product.init({
@@ -78,4 +84,4 @@ Product.init({
   updatedAt: 'updated_at'
 });
 
-export default Product ;
+export default Product;

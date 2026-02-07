@@ -23,7 +23,7 @@ export function SalesBarChart({ data }: { data: HourlyData[] }) {
   return (
     <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm h-[400px] w-full">
       <div className="mb-6">
-        <h3 className="text-xl font-black text-slate-800 tracking-tight">Hourly Revenue</h3>
+        <h3 className="text-xl font-bold text-slate-800 tracking-tight">Hourly Revenue</h3>
         <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Today's Sales Flow</p>
       </div>
 
@@ -50,7 +50,7 @@ export function SalesBarChart({ data }: { data: HourlyData[] }) {
               border: 'none', 
               boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' 
             }}
-            formatter={(value: number) => [`FRW${value.toLocaleString()}`, 'Revenue']}
+            formatter={(value: any) => [`FRW ${Number(value).toLocaleString()}`, 'Revenue']}
           />
           <Bar 
             dataKey="amount" 

@@ -18,9 +18,12 @@ import {
   Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
+// IMPORT the correct type from react-day-picker
+import { DateRange } from "react-day-picker";
 import { SalesBar } from '@/components/charts/SalesBar';
 import { DateRangePicker } from '@/components/shared/DateRangePicker';
 import { Button } from '@/components/ui/button';
+import { adminMetric } from '@/lib/utils/metrics';
 
 interface AdminStats {
   summary: {
@@ -59,11 +62,6 @@ interface AdminStats {
   }>;
 }
 
-interface DateRange {
-  from: Date;
-  to: Date;
-}
-
 // Format currency in FRW
 const formatCurrency = (amount: number) => {
   return `FRW ${Number(amount).toLocaleString('en-RW')}`;
@@ -78,7 +76,9 @@ export default function AdminStatisticsPage() {
   const [data, setData] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [dateRange, setDateRange] = useState<DateRange>({
+  
+  // Set default range using the compatible type
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().setDate(new Date().getDate() - 30)),
     to: new Date()
   });
@@ -87,7 +87,7 @@ export default function AdminStatisticsPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      if (range) {
+      if (range?.from && range?.to) {
         params.append('startDate', range.from.toISOString().split('T')[0]);
         params.append('endDate', range.to.toISOString().split('T')[0]);
       }
@@ -117,7 +117,7 @@ export default function AdminStatisticsPage() {
   };
 
   const handleExport = async (format: 'excel' | 'pdf' = 'excel') => {
-    if (!data) return;
+    if (!data || !dateRange?.from || !dateRange?.to) return;
     
     setExporting(true);
     try {
@@ -149,36 +149,28 @@ export default function AdminStatisticsPage() {
     }
   };
 
-  const handleDateChange = (range: DateRange) => {
+  const handleDateChange = (range: DateRange | undefined) => {
     setDateRange(range);
-    fetchData(range);
+    if (range?.from && range?.to) {
+      fetchData(range);
+    }
   };
 
-  // Helper functions for colors
-const getCardBgClass = (index: number) => {
-  const gradients = [
-    'bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600',
-    'bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600',
-    'bg-gradient-to-br from-purple-600 via-purple-500 to-violet-600',
-    'bg-gradient-to-br from-rose-600 via-rose-500 to-pink-600',
-    'bg-gradient-to-br from-amber-600 via-amber-500 to-orange-600',
-    'bg-gradient-to-br from-sky-600 via-sky-500 to-cyan-600',
-  ];
-  return gradients[index % gradients.length];
-};
+  const getCardBgClass = (index: number) => {
+    const gradients = [
+      'bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600',
+      'bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600',
+      'bg-gradient-to-br from-purple-600 via-purple-500 to-violet-600',
+      'bg-gradient-to-br from-rose-600 via-rose-500 to-pink-600',
+      'bg-gradient-to-br from-amber-600 via-amber-500 to-orange-600',
+      'bg-gradient-to-br from-sky-600 via-sky-500 to-cyan-600',
+    ];
+    return gradients[index % gradients.length];
+  };
 
-const getIconBgClass = (index: number) => {
-  const iconBgs = [
-    'bg-white/20 text-white',
-    'bg-white/20 text-white',
-    'bg-white/20 text-white',
-    'bg-white/20 text-white',
-    'bg-white/20 text-white',
-    'bg-white/20 text-white',
-  ];
-  return iconBgs[index % iconBgs.length];
-};
-      
+  const getIconBgClass = (index: number) => {
+    return 'bg-white/20 text-white';
+  };
 
   if (loading || !data) {
     return (
@@ -192,41 +184,7 @@ const getIconBgClass = (index: number) => {
   }
 
   const { summary, categories, paymentMethods, topProducts } = data;
-
-  const adminMetrics = [
-    { 
-      label: 'Total Revenue', 
-      value: formatCurrency(summary.revenue), // Changed from $ to FRW
-      trend: summary.revenueChange, 
-      icon: DollarSign, 
-      color: 'text-blue-600', 
-      bg: 'bg-blue-50' 
-    },
-    { 
-      label: 'Avg. Order Value', 
-      value: formatCurrency(summary.avgOrderValue), // Changed from $ to FRW
-      trend: summary.avgOrderChange, 
-      icon: TrendingUp, 
-      color: 'text-emerald-600', 
-      bg: 'bg-emerald-50' 
-    },
-    { 
-      label: 'Total Transactions', 
-      value: formatNumber(summary.transactions), // Just numbers
-      trend: summary.transactionChange, 
-      icon: ShoppingBag, 
-      color: 'text-indigo-600', 
-      bg: 'bg-indigo-50' 
-    },
-    { 
-      label: 'Active Staff', 
-      value: summary?.activeStaff?.toString(), 
-      trend: 0,
-      icon: Users, 
-      color: 'text-sky-600', 
-      bg: 'bg-sky-50' 
-    },
-  ];
+  const adminMetrics = adminMetric(summary);
 
   const getTrendColor = (trend: number) => {
     if (trend > 0) return 'text-emerald-500';
@@ -255,51 +213,35 @@ const getIconBgClass = (index: number) => {
     }
   };
 
-
-const handleExportPDF = async () => {
+  const handleExportPDF = async () => {
+    if (!dateRange?.from || !dateRange?.to) return;
     setExporting(true);
-
-  try {
-    const queryParams = new URLSearchParams();
-    if (dateRange?.from) {
+    try {
+      const queryParams = new URLSearchParams();
       queryParams.set('startDate', dateRange.from.toISOString().split('T')[0]);
-    }
-    if (dateRange?.to) {
       queryParams.set('endDate', dateRange.to.toISOString().split('T')[0]);
+      
+      const response = await fetch(`/api/admin/statistics/export/pdf?${queryParams}`);
+      if (!response.ok) throw new Error('Failed to generate PDF');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `admin-report-${dateRange.from.toISOString().split('T')[0]}-to-${dateRange.to.toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('PDF report downloaded successfully');
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast.error('Failed to export PDF report');
+    } finally {
+      setExporting(false);
     }
-    
-    const response = await fetch(`/api/admin/statistics/export/pdf?${queryParams}`);
-    
-    if (!response.ok) {
-      throw new Error('Failed to generate PDF');
-    }
-    
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `admin-report-${
-      dateRange?.from?.toISOString().split('T')[0] || 'latest'
-    }-to-${
-      dateRange?.to?.toISOString().split('T')[0] || 'now'
-    }.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    setExporting(false);
-    
-    toast.success('PDF report downloaded successfully');
-  } catch (error) {
-    setExporting(false);
-
-    console.error('Failed to export PDF:', error);
-    toast.error('Failed to export PDF report');
-  }
-};
-
-
-
+  };
 
   return (
     <div className="space-y-10 pb-10">
@@ -315,27 +257,15 @@ const handleExportPDF = async () => {
             onDateChange={handleDateChange}
           />
           
-          {/* Export Options Dropdown */}
           <div className="relative group">
-            <Button
-              onClick={() => handleExport('excel')}
-              disabled={exporting}
-              
-            >
+            <Button onClick={() => handleExport('excel')} disabled={exporting}>
               {exporting ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  Exporting...
-                </>
+                <><RefreshCw className="w-4 h-4 animate-spin" /> Exporting...</>
               ) : (
-                <>
-                  <FileSpreadsheet className="w-4 h-4" />
-                  Export
-                </>
+                <><FileSpreadsheet className="w-4 h-4" /> Export</>
               )}
             </Button>
             
-            {/* Export Options Dropdown */}
             <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
               <button 
                 onClick={() => handleExport('excel')}
@@ -365,38 +295,33 @@ const handleExportPDF = async () => {
 
       {/* Admin Metrics Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      {adminMetrics.map((m, i) => (
-  <div key={m.label} className={`p-7 rounded-lg border border-white/20 shadow-sm 
-  relative overflow-hidden group hover:shadow-md transition-all duration-300
-  ${getCardBgClass(i)}`}>
-    <div className={`w-12 h-12 ${getIconBgClass(i)} rounded-2xl flex items-center justify-center mb-5 
-    transition-transform group-hover:scale-110 duration-300`}>
-      <m.icon className="w-6 h-6 stroke-[1.5]" />
-    </div>
-    <p className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em] mb-1">{m.label}</p>
-    <div className="flex items-baseline gap-2">
-      <h4 className="text-2xl font-bold text-white">{m.value}</h4>
-      {m.trend !== 0 && (
-        <span className={`text-[10px] font-bold flex items-center gap-0.5 ${getTrendColor(m.trend)}`}>
-          {getTrendIcon(m.trend)}
-          {formatTrend(m.trend)}
-        </span>
-      )}
-    </div>
-  </div>
-))}
+        {adminMetrics.map((m, i) => (
+          <div key={m.label} className={`p-7 rounded-lg border border-white/20 shadow-sm relative overflow-hidden group hover:shadow-md transition-all duration-300 ${getCardBgClass(i)}`}>
+            <div className={`w-12 h-12 ${getIconBgClass(i)} rounded-2xl flex items-center justify-center mb-5 transition-transform group-hover:scale-110 duration-300`}>
+              <m.icon className="w-6 h-6 stroke-[1.5]" />
+            </div>
+            <p className="text-[10px] font-bold text-white/70 uppercase tracking-[0.2em] mb-1">{m.label}</p>
+            <div className="flex items-baseline gap-2">
+              <h4 className="text-2xl font-bold text-white">{m.value}</h4>
+              {m.trend !== 0 && (
+                <span className={`text-[10px] font-bold flex items-center gap-0.5 ${getTrendColor(m.trend)}`}>
+                  {getTrendIcon(m.trend)}
+                  {formatTrend(m.trend)}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
 
-</div>
-
-      {/* Main Visuals Section */}
+      {/* Visuals Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Hourly Sales Flow */}
         <div className="lg:col-span-2 bg-white p-6 rounded-[2.5rem] border border-blue-50/50 shadow-sm">
           <div className="flex items-center justify-between mb-8 px-2 pt-2">
             <div>
               <h3 className="text-lg font-bold text-slate-800">Revenue Flow</h3>
               <p className="text-xs text-slate-400 font-medium">
-                {dateRange.from.toLocaleDateString()} - {dateRange.to.toLocaleDateString()}
+                {dateRange?.from?.toLocaleDateString()} - {dateRange?.to?.toLocaleDateString()}
               </p>
             </div>
             <select 
@@ -417,63 +342,44 @@ const handleExportPDF = async () => {
           {data.hourly && <SalesBar data={data.hourly} />}
         </div>
 
-        {/* Top Categories */}
         <div className="bg-white rounded-[2.5rem] p-8 border border-blue-50/50 shadow-sm">
           <div className="space-y-8">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                
-                <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
-              </div>
-              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                Revenue Share
-              </span>
+              <h3 className="text-lg font-bold text-slate-800">Top Categories</h3>
+              <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Revenue Share</span>
             </div>
-
             <div className="space-y-6">
               {categories.map((cat) => (
                 <div key={cat.name} className="space-y-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-semibold text-slate-700">{cat.name}</span>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-blue-600">
-                        {formatCurrency(cat.revenue)} {/* Changed from $ to FRW */}
-                      </span>
+                      <span className="text-xs font-bold text-blue-600">{formatCurrency(cat.revenue)}</span>
                       <span className={`text-[10px] font-bold ${cat.change > 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                         {cat.change > 0 ? '+' : ''}{cat.change}%
                       </span>
                     </div>
                   </div>
                   <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000`} 
-                      style={{ width: `${cat.percentage}%` }}
-                    />
+                    <div className="h-full bg-gradient-to-r from-blue-500 to-sky-400 rounded-full transition-all duration-1000" style={{ width: `${cat.percentage}%` }} />
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Payment Methods Summary */}
           <div className="mt-12 p-5 bg-blue-50 rounded-3xl border border-blue-100/50">
             <h4 className="text-sm font-bold text-slate-700 mb-3">Payment Methods</h4>
             <div className="space-y-3">
-              {Array.isArray(paymentMethods) && paymentMethods.map((pm) => (
+              {paymentMethods.map((pm) => (
                 <div key={pm.method} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     {getPaymentMethodIcon(pm.method)}
-                    <span className="text-sm font-medium text-slate-600">
-                      {pm.method.charAt(0).toUpperCase() + pm.method.slice(1)}
-                    </span>
+                    <span className="text-sm font-medium text-slate-600">{pm.method.charAt(0).toUpperCase() + pm.method.slice(1)}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-800">
-                      {formatCurrency(pm.revenue)} {/* Changed from $ to FRW */}
-                    </span>
-                    <span className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded-full">
-                      {pm.percentage}%
-                    </span>
+                    <span className="text-sm font-bold text-slate-800">{formatCurrency(pm.revenue)}</span>
+                    <span className="text-xs font-bold text-blue-600 bg-white px-2 py-1 rounded-full">{pm.percentage}%</span>
                   </div>
                 </div>
               ))}
@@ -482,21 +388,15 @@ const handleExportPDF = async () => {
         </div>
       </div>
 
-      {/* Top Products Section */}
+      {/* Products Table */}
       <div className="bg-white rounded-[2.5rem] p-8 border border-blue-50/50 shadow-sm">
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            
-            <div>
-              <h3 className="text-lg font-bold text-slate-800">Top Selling Products</h3>
-              <p className="text-sm text-slate-400">Best performing items by revenue</p>
-            </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">Top Selling Products</h3>
+            <p className="text-sm text-slate-400">Best performing items by revenue</p>
           </div>
-          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">
-            {topProducts?.length} Products
-          </span>
+          <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{topProducts?.length} Products</span>
         </div>
-
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -510,41 +410,26 @@ const handleExportPDF = async () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              { Array.isArray(topProducts) && topProducts.map((product, index) => (
+              {topProducts.map((product, index) => (
                 <tr key={index} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-6 py-4">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
                       index === 0 ? 'bg-amber-50 text-amber-600' :
                       index === 1 ? 'bg-slate-50 text-slate-600' :
-                      index === 2 ? 'bg-orange-50 text-orange-600' :
-                      'bg-blue-50 text-blue-600'
+                      index === 2 ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
                     }`}>
                       {index + 1}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-semibold text-slate-700">{product.name}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-full">
-                      {product.category || 'Uncategorized'}
-                    </span>
-                  </td>
+                  <td className="px-6 py-4"><span className="text-sm font-semibold text-slate-700">{product.name}</span></td>
+                  <td className="px-6 py-4"><span className="text-xs font-medium text-slate-500 bg-slate-50 px-2 py-1 rounded-full">{product.category || 'Uncategorized'}</span></td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-slate-800">
-                        {formatNumber(product.quantity)} {/* Just numbers */}
-                      </span>
-                      <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
-                        Units
-                      </span>
+                      <span className="text-sm font-bold text-slate-800">{formatNumber(product.quantity)}</span>
+                      <span className="text-xs font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">Units</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm font-bold text-slate-800">
-                      {formatCurrency(product.revenue)} {/* Changed from $ to FRW */}
-                    </span>
-                  </td>
+                  <td className="px-6 py-4"><span className="text-sm font-bold text-slate-800">{formatCurrency(product.revenue)}</span></td>
                   <td className="px-6 py-4">
                     <span className="text-sm font-medium text-slate-600">
                       {formatCurrency(product.quantity > 0 ? product.revenue / product.quantity : 0)}

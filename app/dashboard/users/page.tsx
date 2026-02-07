@@ -333,19 +333,7 @@ export default function StaffManagementPage() {
         />
       )}
 
-      {isOpen && type === 'confirmation' && modalData && (
-        <ConfirmationModal 
-          isOpen={isOpen}
-          onClose={closeModal}
-          title={modalData.title || 'Confirm Action'}
-          message={modalData.message || 'Are you sure?'}
-          onConfirm={modalData.onConfirm}
-          onCancel={modalData.onCancel}
-          confirmText={modalData.confirmText}
-          cancelText={modalData.cancelText}
-          confirmVariant={modalData.confirmVariant}
-        />
-      )}
+   
     </>
   );
 }

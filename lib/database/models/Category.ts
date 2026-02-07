@@ -1,5 +1,6 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
 import sequelize from '../connection';
+import Product from './Product';
 
 class Category extends Model<InferAttributes<Category>, InferCreationAttributes<Category>> {
   declare id: CreationOptional<string>;
@@ -8,6 +9,11 @@ class Category extends Model<InferAttributes<Category>, InferCreationAttributes<
   declare parent_id: string | null;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
+  // Virtual association properties for TypeScript visibility
+  declare products?: NonAttribute<Product[]>;
+  declare parent?: NonAttribute<Category>;
+  declare children?: NonAttribute<Category[]>;
 }
 
 Category.init({

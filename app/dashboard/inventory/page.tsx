@@ -58,11 +58,17 @@ export default function InventoryPage() {
     return 'In Stock';
   };
 
-  const getStockColor = (quantity: number, minLevel: number) => {
-    if (quantity === 0) return 'destructive';
-    if (quantity <= minLevel) return 'warning';
-    return 'success';
-  };
+ const getStockColor = (quantity: number, minLevel: number) => {
+  if (quantity === 0) return 'destructive';
+  if (quantity <= minLevel) return 'secondary'; // Using secondary as a base for custom styling
+  return 'outline'; // Using outline as a base for custom styling
+};
+
+const getStockBadgeClass = (quantity: number, minLevel: number) => {
+  if (quantity === 0) return ''; // destructive variant handles its own colors
+  if (quantity <= minLevel) return 'bg-amber-100 text-amber-700 hover:bg-amber-100 border-none';
+  return 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none';
+};
 
   return (
     <div className="space-y-6">
@@ -153,9 +159,12 @@ export default function InventoryPage() {
                       {product.min_stock_level}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStockColor(product.stock_quantity, product.min_stock_level)}>
-                        {getStockStatus(product.stock_quantity, product.min_stock_level)}
-                      </Badge>
+                      <Badge 
+    variant={getStockColor(product.stock_quantity, product.min_stock_level) as any}
+    className={getStockBadgeClass(product.stock_quantity, product.min_stock_level)}
+  >
+    {getStockStatus(product.stock_quantity, product.min_stock_level)}
+  </Badge>
                     </TableCell>
                   
                   </TableRow>

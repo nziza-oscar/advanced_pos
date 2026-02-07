@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch selected barcodes
+    // Fetch selected barcodes with full data
     const barcodes = await Barcode.findAll({
       where: { id: barcodeIds },
       order: [['barcode_id', 'ASC']]
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For single barcode: return PNG
+    // Single barcode format: PNG
     if (barcodes.length === 1 && format === 'png') {
       const canvas = createCanvas(300, 150);
       const barcode = barcodes[0];
@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
         margin: 10
       });
 
-      const pngBuffer = canvas.toBuffer('image/png');
+      // Fix: cast Buffer to Uint8Array for Response
+      const pngBuffer = new Uint8Array(canvas.toBuffer('image/png'));
       
       return new Response(pngBuffer, {
         headers: {
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    // For multiple barcodes: generate PDF
+    // Multiple barcodes format: PDF
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -76,24 +77,19 @@ export async function POST(request: NextRequest) {
 
     let currentRow = 0;
     let currentCol = 0;
-    let page = 1;
 
     for (let i = 0; i < barcodes.length; i++) {
       const barcode = barcodes[i];
       
-      // Check if we need a new page
       if (currentRow >= rows) {
         pdf.addPage();
-        page++;
         currentRow = 0;
         currentCol = 0;
       }
 
-      // Calculate position
       const x = margin + (currentCol * (barcodeWidth + horizontalSpacing));
       const y = margin + (currentRow * (barcodeHeight + verticalSpacing));
 
-      // Generate barcode image
       const canvas = createCanvas(300, 150);
       JsBarcode(canvas, barcode.barcode, {
         format: "CODE128",
@@ -106,19 +102,15 @@ export async function POST(request: NextRequest) {
         margin: 5
       });
 
-      // Add barcode image to PDF
       const imageData = canvas.toDataURL('image/png');
       pdf.addImage(imageData, 'PNG', x, y, barcodeWidth, barcodeHeight);
 
-      // Add barcode number below
+      // Full data labels
       pdf.setFontSize(10);
       pdf.text(barcode.barcode, x + (barcodeWidth / 2), y + barcodeHeight + 5, { align: 'center' });
-
-      // Add barcode ID
       pdf.setFontSize(8);
       pdf.text(`ID: #${barcode.barcode_id}`, x + (barcodeWidth / 2), y + barcodeHeight + 10, { align: 'center' });
 
-      // Move to next position
       currentCol++;
       if (currentCol >= cols) {
         currentCol = 0;
@@ -126,8 +118,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Add footer to each page
-    const totalPages = pdf.getNumberOfPages();
+    // Fix: Access getNumberOfPages through internal or any cast
+    const totalPages = (pdf as any).internal.getNumberOfPages();
     for (let p = 1; p <= totalPages; p++) {
       pdf.setPage(p);
       pdf.setFontSize(8);
@@ -139,7 +131,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+    // Fix: cast arraybuffer to Uint8Array for Response
+    const pdfBuffer = new Uint8Array(pdf.output('arraybuffer'));
     
     return new Response(pdfBuffer, {
       headers: {
@@ -151,11 +144,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Barcode download error:', error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to generate barcode images',
-        details: error.message 
-      },
+      { success: false, error: 'Failed to generate barcode images', details: error.message },
       { status: 500 }
     );
   }

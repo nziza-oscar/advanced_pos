@@ -1,5 +1,18 @@
 import { create } from 'zustand';
 
+export interface StaffMember {
+  id: string;
+  email: string;
+  username: string;
+  full_name: string; // Used in page
+  name?: string;     // Fallback for compatibility
+  role: 'admin' | 'manager' | 'cashier' | 'inventory_manager' | 'staff';
+  is_active: boolean;
+  status?: 'active' | 'inactive'; // Fallback for compatibility
+  last_login?: string | null;
+  created_at?: string;
+}
+
 export type ModalType = 
   | 'checkout' 
   | 'add-product' 
@@ -8,6 +21,8 @@ export type ModalType =
   | 'payment'
   | 'scanner'
   | 'confirmation'
+  | 'add-staff'
+  | 'edit-staff'
   | null;
 
 export interface ModalData {
@@ -27,6 +42,9 @@ export interface ModalData {
   // Transaction modal
   transactionId?: string;
   
+  // Staff modal
+  staff?: StaffMember;
+  
   // Confirmation modal
   title?: string;
   message?: string;
@@ -34,6 +52,7 @@ export interface ModalData {
   onCancel?: () => void;
   confirmText?: string;
   cancelText?: string;
+  confirmVariant?: 'default' | 'destructive' | 'outline' | 'secondary';
   
   // Payment modal
   amount?: number;
@@ -68,7 +87,8 @@ export const useModalStore = create<ModalStore>((set) => ({
   }
 }));
 
-// Helper hooks for specific modals
+// Helper hooks for specific modals to prevent repetition in components
+
 export const useCheckoutModal = () => {
   const openModal = useModalStore((state) => state.openModal);
   
@@ -89,6 +109,15 @@ export const useScannerModal = () => {
   return { openScannerModal };
 };
 
+export const useStaffModal = () => {
+  const openModal = useModalStore((state) => state.openModal);
+  
+  const openAddStaff = () => openModal('add-staff');
+  const openEditStaff = (staff: StaffMember) => openModal('edit-staff', { staff });
+  
+  return { openAddStaff, openEditStaff };
+};
+
 export const useConfirmationModal = () => {
   const openModal = useModalStore((state) => state.openModal);
   
@@ -98,7 +127,8 @@ export const useConfirmationModal = () => {
     onConfirm: () => void,
     onCancel?: () => void,
     confirmText = 'Confirm',
-    cancelText = 'Cancel'
+    cancelText = 'Cancel',
+    confirmVariant: ModalData['confirmVariant'] = 'default'
   ) => {
     openModal('confirmation', {
       title,
@@ -106,7 +136,8 @@ export const useConfirmationModal = () => {
       onConfirm,
       onCancel,
       confirmText,
-      cancelText
+      cancelText,
+      confirmVariant
     });
   };
   

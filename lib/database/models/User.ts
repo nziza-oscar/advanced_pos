@@ -1,7 +1,10 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, Op } from 'sequelize';
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, Op, NonAttribute } from 'sequelize';
 import sequelize from '../connection';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import Transaction from './Transaction';
+import StockLog from './StockLog';
+import Notification from './Notification';
 
 export const UserRole = {
   ADMIN: 'admin',
@@ -12,7 +15,6 @@ export const UserRole = {
 
 export type UserRoleType = typeof UserRole[keyof typeof UserRole];
 
-// Define the class to give TypeScript full visibility of instance properties and methods
 class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<string>;
   declare email: string;
@@ -24,6 +26,11 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare last_login: CreationOptional<Date | null>;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
+  // Virtual association properties for TypeScript
+  declare transactions?: NonAttribute<Transaction[]>;
+  declare stock_logs?: NonAttribute<StockLog[]>;
+  declare notifications?: NonAttribute<Notification[]>;
 
   // Instance Methods
   async comparePassword(candidatePassword: string): Promise<boolean> {
@@ -118,4 +125,4 @@ User.init({
   updatedAt: 'updated_at'
 });
 
-export default User
+export default User;

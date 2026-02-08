@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Receipt, Search, Download, Eye, Loader2 } from 'lucide-react';
 import { TransactionDetailModal } from '@/components/pos/TransactionDetailModal';
+import Titles from '@/components/layout/Titles';
 
 interface Transaction {
   id: string;
@@ -86,17 +87,8 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-primary">Transactions</h1>
-          <p className="text-gray-600">Sales history and receipts.</p>
-        </div>
+        <Titles title='Transactions' description='Sales history and receipts.' />
         
-        <div className="flex gap-3">
-          <Button variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
       </div>
 
       {/* Search Section */}

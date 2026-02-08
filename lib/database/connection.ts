@@ -20,20 +20,6 @@ const sequelize = new Sequelize(databaseUrl, {
     acquire: 30000,
     idle: 10000
   },
-  define: {
-    timestamps: true,
-    underscored: true,
-    freezeTableName: true,
-    name: {
-      singular: 'table',
-      plural: 'tables'
-    }
-  },
-  query: {
-    nest: false,
-    raw: false,
-    type: 'SELECT'
-  },
   benchmark: false,
   retry: {
     max: 3,

@@ -20,6 +20,7 @@ import { AddStaffModal } from '@/components/staff/AddStaffModal';
 import { EditStaffModal } from '@/components/staff/EditStaffModal';
 import { ConfirmationModal } from '@/components/shared/ConfirmationModal';
 import { Button } from '@/components/ui/button';
+import Titles from '@/components/layout/Titles';
 
 interface StaffMember {
   id: string;
@@ -165,10 +166,8 @@ export default function StaffManagementPage() {
       <div className="space-y-8 pb-10">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-primary tracking-tight">Staff Management</h1>
-            <p className="text-slate-400 font-medium mt-1">Manage permissions and team member access.</p>
-          </div>
+         
+          <Titles title='Staff Management' description='Manage permissions and team member access'/>
           <Button
             onClick={handleAddStaff}
           >

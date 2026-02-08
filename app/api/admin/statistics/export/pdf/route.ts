@@ -90,7 +90,7 @@ async function fetchReportData(start: Date, end: Date) {
       COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
-    LEFT JOIN transaction_items ti ON ti.product_id = p.id
+    LEFT JOIN transactionitems ti ON ti.product_id = p.id
     LEFT JOIN transactions t ON t.id = ti.transaction_id
       AND t.created_at BETWEEN :start AND :end
       AND t.status = 'completed'

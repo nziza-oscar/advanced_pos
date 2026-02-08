@@ -3,9 +3,6 @@ import Category from '@/lib/database/models/Category';
 import { Product } from '@/lib/database/models'; 
 import sequelize from '@/lib/database/connection';
 
-
-
-
 export async function GET() {
   try {
     const categories = await Category.findAll({
@@ -15,7 +12,7 @@ export async function GET() {
             sequelize.literal(`(
                 SELECT COUNT(*)
                 FROM "products" AS "product"
-                WHERE "product"."category_id" = "Category"."id"
+                WHERE "product"."category_id" = "n"."id"
             )`),
             'product_count'
           ]
@@ -43,7 +40,10 @@ export async function POST(request: NextRequest) {
     const { name, description, parent_id } = body;
 
     if (!name) {
-      return NextResponse.json({ error: 'Category name is required' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Category name is required' }, 
+        { status: 400 }
+      );
     }
 
     const category = await Category.create({
@@ -55,9 +55,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, data: category }, { status: 201 });
   } catch (error: any) {
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return NextResponse.json({ error: 'Category name already exists' }, { status: 400 });
+      return NextResponse.json(
+        { success: false, error: 'Category name already exists' }, 
+        { status: 400 }
+      );
     }
     console.error('Create category error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Internal Server Error' }, 
+      { status: 500 }
+    );
   }
 }

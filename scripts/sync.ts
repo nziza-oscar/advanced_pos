@@ -1,5 +1,5 @@
 import sequelize from '../lib/database/connection';
-import '../lib/database/models'; // Import models to ensure they are registered
+import '../lib/database/models'; 
 
 const syncDatabase = async () => {
   try {

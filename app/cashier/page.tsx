@@ -8,212 +8,266 @@ import { useCartStore, useCartSummary } from '@/lib/store/cart-store';
 import { CheckoutModal } from '@/components/pos/CheckoutModal';
 import Titles from '@/components/layout/Titles';
 
-
 export default function CashierPage() {
   const [search, setSearch] = useState('');
   const [products, setProducts] = useState<any[]>([]);
-  const [open,setOpen] = useState(false)
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
   
-  // Destructure store 
-  
-  const { addItem, items, updateQuantity, removeItem,totalAmount } = useCartStore();
-  const {  itemsCount } = useCartSummary();
-
+  const { addItem, items, updateQuantity, removeItem, totalAmount } = useCartStore();
+  const { itemsCount } = useCartSummary();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
+        setLoading(true);
         const res = await fetch('/api/products');
         const data = await res.json();
-        if (data.success) setProducts(data.data);
+        
+        if (data.success) {
+          // Handle different API response structures
+          if (Array.isArray(data.data)) {
+            setProducts(data.data);
+          } else if (data.data?.products && Array.isArray(data.data.products)) {
+            setProducts(data.data.products);
+          } else if (data.data && Array.isArray(data.data)) {
+            setProducts(data.data);
+          } else {
+            console.error('Unexpected API response structure:', data);
+            setProducts([]);
+          }
+        } else {
+          console.error('API returned error:', data.error);
+          setProducts([]);
+        }
       } catch (error) {
-        console.error("Failed to load products");
+        console.error("Failed to load products", error);
+        setProducts([]);
+      } finally {
+        setLoading(false);
       }
     };
     fetchProducts();
   }, []);
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(search.toLowerCase()) || 
-    p.barcode?.includes(search)
-  );
+  // Ensure filteredProducts is always an array
+  const filteredProducts = Array.isArray(products) 
+    ? products.filter(p => 
+        p?.name?.toLowerCase().includes(search.toLowerCase()) || 
+        p?.barcode?.includes(search)
+      )
+    : [];
 
   return (
-   <div>
-   
+    <div>
+      <Titles title='Products List' description='Browse and add products to the current transaction'/>
 
-    <Titles title=' Products List' description='Browse and add products to the current transaction'/>
-
-     <div className="flex flex-col-reverse lg:grid lg:grid-cols-12 gap-6 h-full">
-      
-      {/* 1. Product Selection Zone (Left) */}
-      <div className="lg:col-span-8 flex flex-col gap-4">
+      <div className="flex flex-col-reverse lg:grid lg:grid-cols-12 gap-6 h-full">
         
-
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 ">
-         {filteredProducts.map((product) => {
-  const isOutOfStock = Number(product.stock_quantity) <= 0;
-
-  return (
-    <button
-      key={product.id}
-      disabled={isOutOfStock}
-      onClick={() => addItem(product)}
-      className={`group flex flex-col bg-white p-[5px] rounded-xl border transition-all text-left relative overflow-hidden h-full
-        ${isOutOfStock 
-          ? 'opacity-60 cursor-not-allowed border-slate-100' 
-          : 'border-slate-400 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10 active:scale-[0.98]'
-        }`}
-    >
-      {/* Product Image Container */}
-      <div className="aspect-square bg-slate-50 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
-        {product.image_url ? (
-          <img 
-            src={product.image_url} 
-            alt={product.name} 
-            className={`w-full h-full object-cover transition-transform duration-500 ${!isOutOfStock && 'group-hover:scale-110'}`} 
-          />
-        ) : (
-          <Package className="w-10 h-10 text-slate-200" />
-        )}
-
-        {/* Out of Stock Overlay */}
-        {isOutOfStock && (
-          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
-            <span className="bg-white text-slate-900 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-xl">
-              Sold Out
-            </span>
-          </div>
-        )}
-      </div>
-
-      {/* Product Info */}
-      <div className="px-1 flex flex-col flex-1">
-        <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug ">
-          {product.name}
-        </h3>
-        
-        <div className="flex items-center gap-2 mt-1 ">
-          <div className={`h-1.5 w-1.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
-          <p className="text-[11px] font-medium text-slate-400">
-            {isOutOfStock ? 'No stock available' : `${product.stock_quantity} units remaining`}
-          </p>
-        </div>
-
-        {/* Pricing & Add Button */}
-        <div className="flex justify-between items-center mt-auto pt-2">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Price</span>
-            <span className="text-blue-600 font-black text-base tracking-tight">
-              {Number(product.price).toLocaleString()} <span className="text-[10px]">FRW</span>
-            </span>
+        {/* 1. Product Selection Zone (Left) */}
+        <div className="lg:col-span-8 flex flex-col gap-4">
+          
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Input
+              placeholder="Search products by name or barcode..."
+              className="pl-11 h-12 bg-slate-50 border-slate-200 rounded-xl text-base"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
 
-          {!isOutOfStock && (
-            <div className="h-10 w-10 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:rotate-90 transition-all duration-300">
-              <Plus className="w-5 h-5" />
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+              <p className="text-slate-600">Loading products...</p>
             </div>
-          )}
-        </div>
-      </div>
-    </button>
-  );
-})}
-
-        </div>
-      </div>
-
-      {/* 2. Order Summary Zone (Right) */}
-      <div className="lg:col-span-4 bg-white rounded-[1.5rem] border border-slate-400
-       shadow-xl shadow-slate-300/50 flex flex-col overflow-hidden">
-        <div className="p-6 border-b border-slate-50 flex justify-between items-center">
-          <h2 className="text-lg font-bold text-primary flex items-center gap-2">
-            Customer items
-          </h2>
-          <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase">
-            {itemsCount} Items
-          </span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {itemsCount === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50">
-              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
-                <ShoppingCart className="w-6 h-6" />
-              </div>
-              <p className="text-sm italic">Cart is empty</p>
+          ) : filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border border-slate-200">
+              <Package className="w-12 h-12 text-slate-300 mb-4" />
+              <p className="text-slate-600 mb-2">
+                {search ? 'No products match your search' : 'No products available'}
+              </p>
+              {search && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setSearch('')}
+                  className="mt-2"
+                >
+                  Clear Search
+                </Button>
+              )}
             </div>
           ) : (
-            items.map((item) => (
-              <div key={item.product_id} className="flex gap-3 bg-slate-50 p-3 rounded-2xl group">
-                <div className="w-12 h-12 rounded-xl bg-white flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-100">
-                  {item.image_url ? (
-                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <Package className="w-5 h-5 text-slate-300" />
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <h4 className="text-sm font-semibold text-slate-800 truncate pr-2">{item.name}</h4>
-                    <button 
-                      onClick={() => removeItem(item.product_id)}
-                      className="text-slate-300 hover:text-red-500 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="flex justify-between items-center mt-2">
-                    <div className="flex items-center gap-3 bg-white rounded-lg border border-slate-100 p-1">
-                      <button 
-                        onClick={() => updateQuantity(item.product_id, Math.max(1, item.quantity - 1))}
-                        className="w-6 h-6 flex items-center justify-center hover:bg-slate-50 rounded text-slate-500"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
-                      <button 
-                        onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                        className="w-6 h-6 flex items-center justify-center hover:bg-slate-50 rounded text-slate-500"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
+            <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredProducts.map((product) => {
+                const isOutOfStock = Number(product?.stock_quantity || 0) <= 0;
+                const productName = product?.name || 'Unknown Product';
+                const stockQuantity = Number(product?.stock_quantity || 0);
+                const price = Number(product?.price || 0);
+                const barcode = product?.barcode || 'N/A';
+
+                return (
+                  <button
+                    key={product?.id || Math.random()}
+                    disabled={isOutOfStock}
+                    onClick={() => product && addItem(product)}
+                    className={`group flex flex-col bg-white p-[5px] rounded-xl border transition-all text-left relative overflow-hidden h-full
+                      ${isOutOfStock 
+                        ? 'opacity-60 cursor-not-allowed border-slate-100' 
+                        : 'border-slate-400 hover:border-blue-500 hover:shadow-2xl hover:shadow-blue-500/10 active:scale-[0.98]'
+                      }`}
+                  >
+                    {/* Product Image Container */}
+                    <div className="aspect-square bg-slate-50 rounded-xl mb-4 flex items-center justify-center overflow-hidden relative">
+                      {product?.image_url ? (
+                        <img 
+                          src={product.image_url} 
+                          alt={productName} 
+                          className={`w-full h-full object-cover transition-transform duration-500 ${!isOutOfStock && 'group-hover:scale-110'}`} 
+                        />
+                      ) : (
+                        <Package className="w-10 h-10 text-slate-200" />
+                      )}
+
+                      {/* Out of Stock Overlay */}
+                      {isOutOfStock && (
+                        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center">
+                          <span className="bg-white text-slate-900 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter shadow-xl">
+                            Sold Out
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-sm font-bold text-blue-600">
-                      {(Number(item.unit_price) * item.quantity).toLocaleString()} FRW
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))
+
+                    {/* Product Info */}
+                    <div className="px-1 flex flex-col flex-1">
+                      <h3 className="text-sm font-bold text-slate-800 line-clamp-2 leading-snug">
+                        {productName}
+                      </h3>
+                      
+                      <div className="flex items-center gap-2 mt-1">
+                        <div className={`h-1.5 w-1.5 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`} />
+                        <p className="text-[11px] font-medium text-slate-400">
+                          {isOutOfStock ? 'No stock available' : `${stockQuantity} units remaining`}
+                        </p>
+                      </div>
+
+                      {/* Pricing & Add Button */}
+                      <div className="flex justify-between items-center mt-auto pt-2">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Price</span>
+                          <span className="text-blue-600 font-black text-base tracking-tight">
+                            {price.toLocaleString()} <span className="text-[10px]">FRW</span>
+                          </span>
+                        </div>
+
+                        {!isOutOfStock && (
+                          <div className="h-10 w-10 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white group-hover:rotate-90 transition-all duration-300">
+                            <Plus className="w-5 h-5" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
 
-        <div className="p-6 bg-slate-50 space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-slate-500 text-sm">
-              <span>Subtotal</span>
-              <span>{Number(totalAmount).toLocaleString()} FRW</span>
-            </div>
-            <div className="flex justify-between text-slate-900 font-bold text-xl pt-2 border-t border-slate-200">
-              <span>Total</span>
-              <span className="text-blue-600">{Number(totalAmount).toLocaleString()} FRW</span>
-            </div>
+        {/* 2. Order Summary Zone (Right) */}
+        <div className="lg:col-span-4 bg-white rounded-[1.5rem] border border-slate-400 shadow-xl shadow-slate-300/50 flex flex-col overflow-hidden">
+          <div className="p-6 border-b border-slate-50 flex justify-between items-center">
+            <h2 className="text-lg font-bold text-primary flex items-center gap-2">
+              Customer items
+            </h2>
+            <span className="bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-bold uppercase">
+              {itemsCount} Items
+            </span>
           </div>
-          
-          <Button 
-            disabled={itemsCount === 0}
-            onClick={()=>setOpen(true)}
-            className='w-full'
-          >
-            Checkout
-          </Button>
+
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {itemsCount === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-50">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                  <ShoppingCart className="w-6 h-6" />
+                </div>
+                <p className="text-sm italic">Cart is empty</p>
+              </div>
+            ) : (
+              items.map((item) => (
+                <div key={item.product_id} className="flex gap-3 bg-slate-50 p-3 rounded-2xl group">
+                  <div className="w-12 h-12 rounded-xl bg-white flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-100">
+                    {item.image_url ? (
+                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="w-5 h-5 text-slate-300" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <h4 className="text-sm font-semibold text-slate-800 truncate pr-2">{item.name}</h4>
+                      <button 
+                        onClick={() => removeItem(item.product_id)}
+                        className="text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="flex justify-between items-center mt-2">
+                      <div className="flex items-center gap-3 bg-white rounded-lg border border-slate-100 p-1">
+                        <button 
+                          onClick={() => updateQuantity(item.product_id, Math.max(1, item.quantity - 1))}
+                          className="w-6 h-6 flex items-center justify-center hover:bg-slate-50 rounded text-slate-500"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="text-xs font-bold w-4 text-center">{item.quantity}</span>
+                        <button 
+                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                          className="w-6 h-6 flex items-center justify-center hover:bg-slate-50 rounded text-slate-500"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <span className="text-sm font-bold text-blue-600">
+                        {(Number(item.unit_price) * item.quantity).toLocaleString()} FRW
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="p-6 bg-slate-50 space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between text-slate-500 text-sm">
+                <span>Subtotal</span>
+                <span>{Number(totalAmount).toLocaleString()} FRW</span>
+              </div>
+              <div className="flex justify-between text-slate-900 font-bold text-xl pt-2 border-t border-slate-200">
+                <span>Total</span>
+                <span className="text-blue-600">{Number(totalAmount).toLocaleString()} FRW</span>
+              </div>
+            </div>
+            
+            <Button 
+              disabled={itemsCount === 0}
+              onClick={() => setOpen(true)}
+              className='w-full'
+            >
+              Checkout
+            </Button>
+          </div>
         </div>
+        <CheckoutModal open={open} onClose={() => setOpen(prev => !prev)} />
       </div>
-      <CheckoutModal open={open} onClose={()=>setOpen((prev)=>!prev)}/>
     </div>
-   </div>
   );
 }

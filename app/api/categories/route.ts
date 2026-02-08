@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Category from '@/lib/database/models/Category'; 
-import { Product } from '@/lib/database/models'; 
 import sequelize from '@/lib/database/connection';
 
 export async function GET() {
@@ -11,8 +10,8 @@ export async function GET() {
           [
             sequelize.literal(`(
                 SELECT COUNT(*)
-                FROM "products" AS "product"
-                WHERE "product"."category_id" = "Category"."id"
+                FROM products
+                WHERE products.category_id = "Category"."id"
             )`),
             'product_count'
           ]

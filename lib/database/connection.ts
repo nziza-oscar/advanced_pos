@@ -1,28 +1,25 @@
 import { Sequelize } from 'sequelize';
 import pg from "pg"
-import * as mysql2 from 'mysql2'
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Use the DATABASE_URL provided by Neon
-const databaseUrl = process.env.DATABASE_URL ;
+const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error('DATABASE_URL is not defined in environment variables');
 }
 
 const sequelize = new Sequelize(databaseUrl, {
-  // dialect: 'mysql',
   dialect: 'postgres',
   dialectModule: pg,
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false, 
+      rejectUnauthorized: false,
     },
   },
-  logging:  false,
+  logging: false,
   pool: {
     max: 10,
     min: 0,
@@ -31,7 +28,29 @@ const sequelize = new Sequelize(databaseUrl, {
   },
   define: {
     timestamps: true,
-    underscored: true
+    underscored: true,
+    freezeTableName: true,
+    name: {
+      singular: 'table',
+      plural: 'tables'
+    }
+  },
+  query: {
+    nest: false,
+    raw: false,
+    type: 'SELECT'
+  },
+  benchmark: false,
+  retry: {
+    max: 3,
+    match: [
+      /SequelizeConnectionError/,
+      /SequelizeConnectionRefusedError/,
+      /SequelizeHostNotFoundError/,
+      /SequelizeHostNotReachableError/,
+      /SequelizeInvalidConnectionError/,
+      /SequelizeConnectionTimedOutError/
+    ]
   }
 });
 

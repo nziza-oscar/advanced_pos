@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Product, Category } from '@/lib/database/models';
+import { Product, Category,sequelize,StockLog } from '@/lib/database/models';
+import { verifyAuth } from '@/lib/auth/auth-utils';
+import { validateFile, uploadProductImage } from '@/lib/utils/file-upload';
 
 // Updated interface to reflect that params is now a Promise
 interface RouteParams {
@@ -133,6 +135,194 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     console.error('Delete product error:', error);
     return NextResponse.json(
       { error: 'Failed to delete product' },
+      { status: 500 }
+    );
+  }
+}
+
+
+
+
+
+export async function PATCH(request: NextRequest) {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    // Verify user authentication
+    const user = await verifyAuth(request);
+    if (!user) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Unauthorized. Please login to update products.' 
+        },
+        { status: 401 }
+      );
+    }
+
+    // Extract product ID from URL path
+    const pathParts = request.nextUrl.pathname.split('/');
+    const productId = pathParts[pathParts.length - 1];
+    
+    if (!productId) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Product ID is required' 
+        },
+        { status: 400 }
+      );
+    }
+
+    // Find the product
+    const product = await Product.findByPk(productId, { transaction });
+    
+    if (!product) {
+      await transaction.rollback();
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Product not found' 
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check content type
+    const contentType = request.headers.get('content-type') || '';
+    
+    let updates: any = {};
+    let imageFile: File | null = null;
+
+    if (contentType.includes('multipart/form-data')) {
+      // Handle form data
+      const formData = await request.formData();
+      
+      // Extract fields
+      const name = formData.get('name') as string | null;
+      const category_id = formData.get('category_id') as string | null;
+      const cost_price_raw = formData.get('cost_price') as string | null;
+      const price_raw = formData.get('price') as string | null;
+      const stock_quantity_raw = formData.get('stock_quantity') as string | null;
+      const min_stock_level_raw = formData.get('min_stock_level') as string | null;
+      const description = formData.get('description') as string | null;
+      const is_active_raw = formData.get('is_active') as string | null;
+      imageFile = formData.get('image') as File | null;
+
+      // Build updates
+      if (name !== null) updates.name = name;
+      if (category_id !== null) updates.category_id = category_id || null;
+      if (cost_price_raw !== null) updates.cost_price = parseFloat(cost_price_raw) || 0;
+      if (price_raw !== null) updates.price = parseFloat(price_raw) || 0;
+      if (stock_quantity_raw !== null) updates.stock_quantity = parseInt(stock_quantity_raw) || 0;
+      if (min_stock_level_raw !== null) updates.min_stock_level = parseInt(min_stock_level_raw) || 5;
+      if (description !== null) updates.description = description || null;
+      if (is_active_raw !== null) updates.is_active = is_active_raw === 'true';
+      
+    } else {
+      // Handle JSON data
+      updates = await request.json();
+    }
+
+    // Validate price vs cost price
+    if (updates.cost_price !== undefined && updates.price !== undefined) {
+      const cost_price = typeof updates.cost_price === 'string' 
+        ? parseFloat(updates.cost_price) 
+        : updates.cost_price;
+      const price = typeof updates.price === 'string' 
+        ? parseFloat(updates.price) 
+        : updates.price;
+      
+      if (price < cost_price) {
+        await transaction.rollback();
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'Selling price cannot be lower than cost price' 
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Handle image upload
+    if (imageFile && imageFile.size > 0) {
+      const validation = validateFile(imageFile);
+      if (!validation.valid) {
+        await transaction.rollback();
+        return NextResponse.json({ 
+          success: false,
+          error: validation.error 
+        }, { status: 400 });
+      }
+      
+      try {
+        const upload = await uploadProductImage(imageFile);
+        updates.image_url = upload.url;
+      } catch (uploadError) {
+        console.error('Image upload error:', uploadError);
+        // Continue without updating image
+      }
+    }
+
+    // Store old stock quantity for StockLog
+    const oldStockQuantity = product.stock_quantity;
+
+    // Update the product
+    await product.update(updates, { transaction });
+
+    // Create StockLog entry if stock changed
+    if (updates.stock_quantity !== undefined && updates.stock_quantity !== oldStockQuantity) {
+      const changeAmount = updates.stock_quantity - oldStockQuantity;
+      
+      await StockLog.create({
+        product_id: product.id,
+        user_id: user.id,
+        change_amount: changeAmount,
+        previous_quantity: oldStockQuantity,
+        new_quantity: updates.stock_quantity,
+        reason: changeAmount > 0 ? 'manual_addition' : 'manual_reduction',
+        notes: `Stock updated by ${user.full_name || user.username}`
+      }, { transaction });
+    }
+
+    await transaction.commit();
+
+    // Fetch updated product with category
+    const updatedProduct = await Product.findByPk(productId, {
+      include: [{
+        model: Category,
+        as: 'category',
+        attributes: ['id', 'name']
+      }]
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Product updated successfully',
+      data: updatedProduct
+    });
+
+  } catch (error: any) {
+    await transaction.rollback();
+    console.error('Update product error:', error);
+    
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Barcode already exists in system.',
+          errorType: 'BARCODE_CONFLICT'
+        },
+        { status: 400 }
+      );
+    }
+    
+    return NextResponse.json(
+      { 
+        success: false,
+        error: error.message || 'Failed to update product' 
+      },
       { status: 500 }
     );
   }

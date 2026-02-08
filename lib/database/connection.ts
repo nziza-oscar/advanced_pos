@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
-import pg from "pg"
 import dotenv from 'dotenv';
+import * as mysql from "mysql2"
 
 dotenv.config();
 
@@ -11,14 +11,8 @@ if (!databaseUrl) {
 }
 
 const sequelize = new Sequelize(databaseUrl, {
-  dialect: 'postgres',
-  dialectModule: pg,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
+  dialect: 'mysql',
+  dialectModule: mysql,
   logging: false,
   pool: {
     max: 10,

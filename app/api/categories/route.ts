@@ -12,7 +12,7 @@ export async function GET() {
             sequelize.literal(`(
                 SELECT COUNT(*)
                 FROM "products" AS "product"
-                WHERE "product"."category_id" = "n"."id"
+                WHERE "product"."category_id" = "Category"."id"
             )`),
             'product_count'
           ]

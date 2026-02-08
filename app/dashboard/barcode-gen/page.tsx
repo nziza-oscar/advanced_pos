@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import JsBarcode from 'jsbarcode';
+import Titles from '@/components/layout/Titles';
 
 type Barcode = {
   id: string;
@@ -350,13 +351,8 @@ export default function BarcodeGenPage() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Barcode Generator</h1>
-          <p className="text-muted-foreground">
-            Generate and manage unique barcodes for your products
-          </p>
-        </div>
-        
+       
+        <Titles title='Barcode Generator' description=' Generate and manage unique barcodes for your products'/>
         <div className="flex items-center gap-2">
           {selectedBarcodes.length > 0 && (
             <Button 

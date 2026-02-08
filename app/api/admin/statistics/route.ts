@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
           (SELECT COALESCE(SUM(ti2.quantity * ti2.unit_price), 0)
            FROM categories c2
            LEFT JOIN products p2 ON p2.category_id = c2.id
-           LEFT JOIN transaction_items ti2 ON ti2.product_id = p2.id
+           LEFT JOIN transactionitems ti2 ON ti2.product_id = p2.id
            LEFT JOIN transactions t2 ON t2.id = ti2.transaction_id 
              AND t2.created_at BETWEEN :prevStart AND :prevEnd
              AND t2.status = 'completed'
@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
           ), 0) as previous_revenue
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id
-      LEFT JOIN transaction_items ti ON ti.product_id = p.id
+      LEFT JOIN transactionitems ti ON ti.product_id = p.id
       LEFT JOIN transactions t ON t.id = ti.transaction_id 
         AND t.created_at BETWEEN :start AND :end
         AND t.status = 'completed'
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
         COALESCE(SUM(ti.total_price), 0) as revenue
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN transaction_items ti ON ti.product_id = p.id
+      LEFT JOIN transactionitems ti ON ti.product_id = p.id
       LEFT JOIN transactions t ON t.id = ti.transaction_id
         AND t.created_at BETWEEN :start AND :end
         AND t.status = 'completed'

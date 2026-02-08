@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Transaction, Product, User} from '@/lib/database/models';
 import { Op, QueryTypes } from 'sequelize';
-import  sequelize from "@/lib/database/connection"
+import sequelize from "@/lib/database/connection"
 
 export async function GET(request: NextRequest) {
   try {
@@ -140,34 +140,74 @@ async function getPeriodStats(startDate: Date, endDate: Date) {
 }
 
 async function getTopCategories(startDate: Date, endDate: Date) {
-  const categories = await sequelize.query(`
-    SELECT 
-      c.name,
-      COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue,
-      0 as \`change\`
-    FROM categories c
-    LEFT JOIN products p ON p.category_id = c.id
-    LEFT JOIN transaction_items ti ON ti.product_id = p.id
-    LEFT JOIN transactions t ON t.id = ti.transaction_id
-      AND t.created_at BETWEEN :start AND :end
-      AND t.status = 'completed'
-    WHERE t.id IS NOT NULL
-    GROUP BY c.id, c.name
-    ORDER BY revenue DESC
-    LIMIT 5
-  `, {
-    replacements: { 
-      start: startDate.toISOString().slice(0, 19).replace('T', ' '), 
-      end: endDate.toISOString().slice(0, 19).replace('T', ' ') 
-    },
-    type: QueryTypes.SELECT
-  }) as any[];
+  try {
+    const categories = await sequelize.query(`
+      SELECT 
+        c.name,
+        COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue,
+        0 as \`change\`
+      FROM categories c
+      LEFT JOIN products p ON p.category_id = c.id
+      LEFT JOIN transactionitems ti ON ti.product_id = p.id
+      LEFT JOIN transactions t ON t.id = ti.transaction_id
+        AND t.created_at BETWEEN :start AND :end
+        AND t.status = 'completed'
+      WHERE t.id IS NOT NULL
+      GROUP BY c.id, c.name
+      ORDER BY revenue DESC
+      LIMIT 5
+    `, {
+      replacements: { 
+        start: startDate.toISOString().slice(0, 19).replace('T', ' '), 
+        end: endDate.toISOString().slice(0, 19).replace('T', ' ') 
+      },
+      type: QueryTypes.SELECT
+    }) as any[];
 
-  return categories.map(cat => ({
-    name: cat.name,
-    revenue: parseFloat(cat.revenue),
-    change: 0
-  }));
+    return categories.map(cat => ({
+      name: cat.name,
+      revenue: parseFloat(cat.revenue),
+      change: 0
+    }));
+  } catch (error) {
+    console.error('Error in getTopCategories:', error);
+    
+    // Fallback: try alternative table names
+    try {
+      // Try with backticks for MySQL
+      const categories = await sequelize.query(`
+        SELECT 
+          c.name,
+          COALESCE(SUM(ti.quantity * ti.unit_price), 0) as revenue,
+          0 as \`change\`
+        FROM \`categories\` c
+        LEFT JOIN \`products\` p ON p.category_id = c.id
+        LEFT JOIN \`transactionitems\` ti ON ti.product_id = p.id
+        LEFT JOIN \`transactions\` t ON t.id = ti.transaction_id
+          AND t.created_at BETWEEN :start AND :end
+          AND t.status = 'completed'
+        WHERE t.id IS NOT NULL
+        GROUP BY c.id, c.name
+        ORDER BY revenue DESC
+        LIMIT 5
+      `, {
+        replacements: { 
+          start: startDate.toISOString().slice(0, 19).replace('T', ' '), 
+          end: endDate.toISOString().slice(0, 19).replace('T', ' ') 
+        },
+        type: QueryTypes.SELECT
+      }) as any[];
+
+      return categories.map(cat => ({
+        name: cat.name,
+        revenue: parseFloat(cat.revenue),
+        change: 0
+      }));
+    } catch (fallbackError) {
+      console.error('Fallback also failed:', fallbackError);
+      return [];
+    }
+  }
 }
 
 async function getRecentTransactions() {

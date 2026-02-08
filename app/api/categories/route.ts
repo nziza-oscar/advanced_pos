@@ -3,6 +3,9 @@ import Category from '@/lib/database/models/Category';
 import { Product } from '@/lib/database/models'; 
 import sequelize from '@/lib/database/connection';
 
+
+
+
 export async function GET() {
   try {
     const categories = await Category.findAll({
@@ -11,8 +14,8 @@ export async function GET() {
           [
             sequelize.literal(`(
                 SELECT COUNT(*)
-                FROM \`products\` AS \`product\`
-                WHERE \`product\`.\`category_id\` = \`Category\`.\`id\`
+                FROM "products" AS "product"
+                WHERE "product"."category_id" = "Category"."id"
             )`),
             'product_count'
           ]
@@ -21,10 +24,16 @@ export async function GET() {
       order: [['name', 'ASC']]
     });
 
-    return NextResponse.json({ success: true, data: categories });
+    return NextResponse.json({ 
+      success: true, 
+      data: categories 
+    });
   } catch (error: any) {
     console.error('Fetch categories error:', error);
-    return NextResponse.json({ error: 'Failed to fetch categories' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: 'Failed to fetch categories' }, 
+      { status: 500 }
+    );
   }
 }
 

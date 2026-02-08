@@ -16,10 +16,13 @@ export default function AuthLayout({
           src="/images/pos.jpg" 
           alt="Authentication background"
           className="absolute inset-0 h-full w-full object-cover"
+          
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent flex items-end p-12">
           <div className="space-y-2">
-            <Logo className="w-16 h-16 mb-4" />
+           <Link href="/" >
+               <Logo className="w-16 h-16 mb-4" />
+           </Link>
             <h2 className="text-3xl font-bold tracking-tight">Streamline your business.</h2>
             <p className="text-muted-foreground text-lg">The all-in-one POS solution for modern commerce.</p>
           </div>

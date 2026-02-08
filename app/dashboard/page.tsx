@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import Titles from '@/components/layout/Titles';
 
 interface DashboardStats {
   revenue: {
@@ -182,13 +183,9 @@ export default function AdminDashboardPage() {
     <div className="space-y-8 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight title">Dashboard</h1>
-          <p className="text-muted-foreground text-sm md:text-base">
-            Overview of business performance and management tools
-          </p>
-        </div>
         
+        
+        <Titles title='Dashboard' description=' Overview of business performance and management tools' />
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
           <div className="flex items-center gap-2 mb-2 sm:mb-0">
             <Button

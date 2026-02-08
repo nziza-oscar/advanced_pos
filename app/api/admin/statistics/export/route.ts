@@ -230,7 +230,7 @@ async function getTopProducts(start: Date, end: Date) {
     SELECT p.name, c.name as category_name, SUM(ti.quantity) as quantity, SUM(ti.quantity * ti.unit_price) as revenue
     FROM products p
     LEFT JOIN categories c ON c.id = p.category_id
-    LEFT JOIN transaction_items ti ON ti.product_id = p.id
+    LEFT JOIN transactionitems ti ON ti.product_id = p.id
     LEFT JOIN transactions t ON t.id = ti.transaction_id AND t.created_at BETWEEN :start AND :end AND t.status = 'completed'
     WHERE t.id IS NOT NULL GROUP BY p.id, p.name, c.name ORDER BY revenue DESC LIMIT 20
   `, { replacements: { start, end }, type: QueryTypes.SELECT }) as any[];
@@ -248,7 +248,7 @@ async function getCategoryAnalysis(start: Date, end: Date) {
     SELECT c.name, SUM(ti.quantity * ti.unit_price) as revenue, COUNT(DISTINCT ti.transaction_id) as transaction_count
     FROM categories c
     LEFT JOIN products p ON p.category_id = c.id
-    LEFT JOIN transaction_items ti ON ti.product_id = p.id
+    LEFT JOIN transactionitems ti ON ti.product_id = p.id
     LEFT JOIN transactions t ON t.id = ti.transaction_id AND t.created_at BETWEEN :start AND :end AND t.status = 'completed'
     WHERE t.id IS NOT NULL GROUP BY c.id, c.name ORDER BY revenue DESC
   `, { replacements: { start, end }, type: QueryTypes.SELECT }) as any[];

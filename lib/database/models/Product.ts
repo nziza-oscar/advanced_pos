@@ -1,11 +1,12 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
+// lib/database/models/Product.ts
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
 import sequelize from '../connection';
-import Category from './Category';
-import StockLog from './StockLog';
 
 class Product extends Model<InferAttributes<Product>, InferCreationAttributes<Product>> {
   declare id: CreationOptional<string>;
+  declare tenant_id: string;
   declare barcode: string;
+  declare qr_code: string | null;
   declare name: string;
   declare description: string | null;
   declare price: number;
@@ -15,12 +16,9 @@ class Product extends Model<InferAttributes<Product>, InferCreationAttributes<Pr
   declare stock_quantity: number;
   declare min_stock_level: number;
   declare is_active: CreationOptional<boolean>;
+  declare sku: string | null;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
-
-  // Virtual association properties for TypeScript visibility
-  declare category?: NonAttribute<Category>;
-  declare stock_logs?: NonAttribute<StockLog[]>;
 }
 
 Product.init({
@@ -29,10 +27,25 @@ Product.init({
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  tenant_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'tenants',
+      key: 'id'
+    }
+  },
   barcode: {
     type: DataTypes.STRING(100),
-    unique: true,
     allowNull: false
+  },
+  qr_code: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  sku: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   },
   name: {
     type: DataTypes.STRING(200),
@@ -57,7 +70,11 @@ Product.init({
   },
   category_id: {
     type: DataTypes.UUID,
-    allowNull: true
+    allowNull: true,
+    references: {
+      model: 'categories',
+      key: 'id'
+    }
   },
   stock_quantity: {
     type: DataTypes.INTEGER,
@@ -81,7 +98,12 @@ Product.init({
   tableName: 'products',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { fields: ['tenant_id'] },
+    { fields: ['tenant_id', 'barcode'], unique: true },
+    { fields: ['tenant_id', 'sku'], unique: true }
+  ]
 });
 
 export default Product;

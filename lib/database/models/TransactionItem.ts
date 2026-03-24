@@ -1,7 +1,6 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
+// lib/database/models/TransactionItem.ts
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
 import sequelize from '../connection';
-import Product from './Product';
-import Transaction from './Transaction';
 
 class TransactionItem extends Model<InferAttributes<TransactionItem>, InferCreationAttributes<TransactionItem>> {
   declare id: CreationOptional<string>;
@@ -9,17 +8,12 @@ class TransactionItem extends Model<InferAttributes<TransactionItem>, InferCreat
   declare product_id: string;
   declare barcode: string;
   declare product_name: string;
-  declare product_image: string | null;
   declare quantity: number;
   declare unit_price: number;
   declare total_price: number;
   declare discount_amount: number;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
-
-  // Virtual associations for TypeScript visibility
-  declare product?: NonAttribute<Product>;
-  declare transaction?: NonAttribute<Transaction>;
 }
 
 TransactionItem.init({
@@ -30,15 +24,19 @@ TransactionItem.init({
   },
   transaction_id: {
     type: DataTypes.UUID,
-    allowNull: false
+    allowNull: false,
+    references: {
+      model: 'transactions',
+      key: 'id'
+    }
   },
   product_id: {
     type: DataTypes.UUID,
-    allowNull: false
-  },
-  product_image: {
-    type: DataTypes.STRING,
-    allowNull: true
+    allowNull: false,
+    references: {
+      model: 'products',
+      key: 'id'
+    }
   },
   barcode: {
     type: DataTypes.STRING(100),
@@ -51,7 +49,10 @@ TransactionItem.init({
   quantity: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: 1
+    defaultValue: 1,
+    validate: {
+      min: 1
+    }
   },
   unit_price: {
     type: DataTypes.DECIMAL(10, 2),
@@ -72,6 +73,7 @@ TransactionItem.init({
   updated_at: DataTypes.DATE
 }, {
   sequelize,
+  tableName: 'transaction_items',
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',

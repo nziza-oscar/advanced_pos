@@ -1,13 +1,11 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute } from 'sequelize';
+// lib/database/models/Transaction.ts
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
 import sequelize from '../connection';
-import TransactionItem from './TransactionItem';
-import User from './User';
 
 export const PaymentMethod = {
   CASH: 'cash',
   MOMO: 'momo',
-  CARD: 'card',
-  BANK: 'bank'
+  CARD: 'card'
 } as const;
 
 export const TransactionStatus = {
@@ -22,6 +20,7 @@ export type TransactionStatusType = typeof TransactionStatus[keyof typeof Transa
 
 class Transaction extends Model<InferAttributes<Transaction>, InferCreationAttributes<Transaction>> {
   declare id: CreationOptional<string>;
+  declare tenant_id: string;
   declare transaction_number: string;
   declare customer_name: string | null;
   declare customer_phone: string | null;
@@ -32,17 +31,11 @@ class Transaction extends Model<InferAttributes<Transaction>, InferCreationAttri
   declare amount_paid: number;
   declare change_amount: number;
   declare payment_method: PaymentMethodType;
-  declare momo_transaction_id: string | null;
-  declare momo_phone: string | null;
   declare status: TransactionStatusType;
   declare notes: string | null;
-  declare created_by: string | null;
+  declare created_by: string;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
-
-  // Virtual associations for TypeScript visibility
-  declare items?: NonAttribute<TransactionItem[]>;
-  declare cashier?: NonAttribute<User>;
 }
 
 Transaction.init({
@@ -51,9 +44,16 @@ Transaction.init({
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  tenant_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'tenants',
+      key: 'id'
+    }
+  },
   transaction_number: {
     type: DataTypes.STRING(50),
-    unique: true,
     allowNull: false
   },
   customer_name: {
@@ -99,14 +99,6 @@ Transaction.init({
     allowNull: false,
     defaultValue: PaymentMethod.CASH
   },
-  momo_transaction_id: {
-    type: DataTypes.STRING(100),
-    allowNull: true
-  },
-  momo_phone: {
-    type: DataTypes.STRING(20),
-    allowNull: true
-  },
   status: {
     type: DataTypes.ENUM(...Object.values(TransactionStatus)),
     allowNull: false,
@@ -118,7 +110,11 @@ Transaction.init({
   },
   created_by: {
     type: DataTypes.UUID,
-    allowNull: true
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   created_at: DataTypes.DATE,
   updated_at: DataTypes.DATE
@@ -129,7 +125,9 @@ Transaction.init({
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   indexes: [
+    { fields: ['tenant_id'] },
     { fields: ['transaction_number'] },
+    { fields: ['tenant_id', 'transaction_number'], unique: true },
     { fields: ['created_at'] },
     { fields: ['status'] }
   ]

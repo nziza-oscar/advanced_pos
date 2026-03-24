@@ -1,13 +1,12 @@
-import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, Op, NonAttribute } from 'sequelize';
+// lib/database/models/User.ts
+import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional, Op } from 'sequelize';
 import sequelize from '../connection';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import Transaction from './Transaction';
-import StockLog from './StockLog';
-import Notification from './Notification';
 
 export const UserRole = {
-  ADMIN: 'admin',
+  SUPER_ADMIN: 'super_admin',
+  TENANT_ADMIN: 'tenant_admin',
   MANAGER: 'manager',
   CASHIER: 'cashier',
   INVENTORY_MANAGER: 'inventory_manager'
@@ -17,6 +16,7 @@ export type UserRoleType = typeof UserRole[keyof typeof UserRole];
 
 class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare id: CreationOptional<string>;
+  declare tenant_id: string | null;
   declare email: string;
   declare username: string;
   declare password_hash: string;
@@ -27,12 +27,6 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
 
-  // Virtual association properties for TypeScript
-  declare transactions?: NonAttribute<Transaction[]>;
-  declare stock_logs?: NonAttribute<StockLog[]>;
-  declare notifications?: NonAttribute<Notification[]>;
-
-  // Instance Methods
   async comparePassword(candidatePassword: string): Promise<boolean> {
     return await bcrypt.compare(candidatePassword, this.password_hash);
   }
@@ -43,7 +37,8 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
       email: this.email,
       username: this.username,
       role: this.role,
-      full_name: this.full_name
+      full_name: this.full_name,
+      tenant_id: this.tenant_id
     };
 
     return jwt.sign(
@@ -53,19 +48,22 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     );
   }
 
-  // Static Methods
   static async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(10);
     return await bcrypt.hash(password, salt);
   }
 
-  static async findByCredentials(emailOrUsername: string, password: string): Promise<User> {
-    const user = await User.findOne({
-      where: {
-        [Op.or]: [{ email: emailOrUsername }, { username: emailOrUsername }],
-        is_active: true
-      }
-    });
+  static async findByCredentials(emailOrUsername: string, password: string, tenant_id?: string): Promise<User> {
+    const whereClause: any = {
+      [Op.or]: [{ email: emailOrUsername }, { username: emailOrUsername }],
+      is_active: true
+    };
+    
+    if (tenant_id) {
+      whereClause.tenant_id = tenant_id;
+    }
+
+    const user = await User.findOne({ where: whereClause });
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       throw new Error('Invalid login credentials');
@@ -82,15 +80,21 @@ User.init({
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
+  tenant_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: {
+      model: 'tenants',
+      key: 'id'
+    }
+  },
   email: {
     type: DataTypes.STRING(100),
-    unique: true,
     allowNull: false,
     validate: { isEmail: true }
   },
   username: {
     type: DataTypes.STRING(50),
-    unique: true,
     allowNull: false
   },
   password_hash: {
@@ -122,7 +126,12 @@ User.init({
   tableName: 'users',
   timestamps: true,
   createdAt: 'created_at',
-  updatedAt: 'updated_at'
+  updatedAt: 'updated_at',
+  indexes: [
+    { fields: ['tenant_id'] },
+    { fields: ['email'], unique: true },
+    { fields: ['username'] }
+  ]
 });
 
 export default User;

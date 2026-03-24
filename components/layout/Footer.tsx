@@ -11,7 +11,7 @@ export function Footer() {
         
         {/* Copyright */}
         <p className="text-slate-400 text-sm font-medium">
-          © {currentYear}  All rights reserved.
+            All rights reserved © {currentYear} <i>NZIZA OSCAR</i>
         </p>
 
         {/* Links */}

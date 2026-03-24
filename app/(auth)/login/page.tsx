@@ -1,7 +1,8 @@
+// app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,23 +19,50 @@ export default function LoginPage() {
     password: '',
   });
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get('redirect');
+  const tenantParam = searchParams.get('tenant');
+
+  // If tenant param exists, store it for login
+  useEffect(() => {
+    if (tenantParam) {
+      localStorage.setItem('login_tenant', tenantParam);
+    }
+  }, [tenantParam]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      // Get tenant from localStorage if exists
+      const tenantSlug = localStorage.getItem('login_tenant');
+      
       const response = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password,
+          tenant_slug: tenantSlug
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
         toast.success('Login successful!');
-        router.push('/dashboard');
+        
+        // Clear stored tenant
+        localStorage.removeItem('login_tenant');
+        
+        if (data.data.redirectUrl) {
+          router.push(data.data.redirectUrl);
+        } else if (redirectParam) {
+          router.push(redirectParam);
+        } else {
+          router.push('/dashboard');
+        }
       } else {
         toast.error(data.error || 'Login failed');
       }
@@ -72,13 +100,13 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-3">
             <Label htmlFor="username" className="text-xs font-bold uppercase tracking-widest">
-              Username
+              Email or Username
             </Label>
             <Input
               id="username"
               name="username"
               type="text"
-              placeholder="admin"
+              placeholder="admin@example.com or username"
               value={formData.username}
               onChange={handleChange}
               required
@@ -134,7 +162,7 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <div className="text-center border-t border-muted py-2">
+        <div className="text-center border-t border-muted py-2 mt-6">
           <p className="text-xs text-muted-foreground uppercase tracking-tight">
             New to the platform?{' '}
             <Link 

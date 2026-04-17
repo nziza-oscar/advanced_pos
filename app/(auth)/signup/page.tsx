@@ -79,7 +79,7 @@ export default function SignupPage() {
         toast.success('Account created successfully!');
         
         // Auto login after signup
-        const loginResponse = await fetch('/api/auth/login', {
+        const loginResponse = await fetch('/api/auth/signin', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

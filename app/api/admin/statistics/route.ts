@@ -1,3 +1,4 @@
+// app/api/admin/stats/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { Transaction, User, Product, Category, sequelize } from '@/lib/database/models';
 import { Op, QueryTypes } from 'sequelize';
@@ -17,14 +18,12 @@ export async function GET(request: NextRequest) {
     const end = endDate ? new Date(endDate) : new Date();
     if (!endDate) end.setHours(23, 59, 59, 999);
 
-    // Calculate previous period for comparison
     const previousStart = new Date(start);
     const previousEnd = new Date(start);
     previousStart.setDate(previousStart.getDate() - (end.getDate() - start.getDate() + 1));
     previousEnd.setDate(previousEnd.getDate() - 1);
     previousEnd.setHours(23, 59, 59, 999);
 
-    // Summary Statistics - Current Period
     const currentSummary = await Transaction.findOne({
       where: {
         created_at: { [Op.between]: [start, end] },
@@ -37,7 +36,6 @@ export async function GET(request: NextRequest) {
       raw: true
     }) as any;
 
-    // Summary Statistics - Previous Period (for calculating changes)
     const previousSummary = await Transaction.findOne({
       where: {
         created_at: { [Op.between]: [previousStart, previousEnd] },
@@ -55,7 +53,6 @@ export async function GET(request: NextRequest) {
     const previousRevenue = parseFloat(previousSummary?.revenue || 0);
     const previousTransactions = parseInt(previousSummary?.transactions || 0);
 
-    // Calculate percentage changes
     const revenueChange = previousRevenue > 0 
       ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 
       : currentRevenue > 0 ? 100 : 0;
@@ -70,7 +67,6 @@ export async function GET(request: NextRequest) {
       ? ((currentAvgOrder - previousAvgOrder) / previousAvgOrder) * 100
       : currentAvgOrder > 0 ? 100 : 0;
 
-    // Active Staff (users who created transactions in the period)
     const activeStaff = await User.count({
       include: [{
         model: Transaction,
@@ -83,7 +79,6 @@ export async function GET(request: NextRequest) {
       }]
     });
 
-    // Hourly Sales Data
     const hourlyData = await Transaction.findAll({
       where: {
         created_at: { [Op.between]: [start, end] },
@@ -98,7 +93,6 @@ export async function GET(request: NextRequest) {
       raw: true
     });
 
-    // Category Revenue
     const categoryData = await sequelize.query(`
       SELECT 
         c.id,
@@ -108,7 +102,7 @@ export async function GET(request: NextRequest) {
           (SELECT COALESCE(SUM(ti2.quantity * ti2.unit_price), 0)
            FROM categories c2
            LEFT JOIN products p2 ON p2.category_id = c2.id
-           LEFT JOIN transactionitems ti2 ON ti2.product_id = p2.id
+           LEFT JOIN transaction_items ti2 ON ti2.product_id = p2.id
            LEFT JOIN transactions t2 ON t2.id = ti2.transaction_id 
              AND t2.created_at BETWEEN :prevStart AND :prevEnd
              AND t2.status = 'completed'
@@ -116,7 +110,7 @@ export async function GET(request: NextRequest) {
           ), 0) as previous_revenue
       FROM categories c
       LEFT JOIN products p ON p.category_id = c.id
-      LEFT JOIN transactionitems ti ON ti.product_id = p.id
+      LEFT JOIN transaction_items ti ON ti.product_id = p.id
       LEFT JOIN transactions t ON t.id = ti.transaction_id 
         AND t.created_at BETWEEN :start AND :end
         AND t.status = 'completed'
@@ -134,7 +128,6 @@ export async function GET(request: NextRequest) {
       type: QueryTypes.SELECT
     }) as any[];
 
-    // Payment Methods Breakdown
     const paymentMethodsData = await Transaction.findAll({
       where: {
         created_at: { [Op.between]: [start, end] },
@@ -149,7 +142,6 @@ export async function GET(request: NextRequest) {
       raw: true
     }) as any[];
 
-    // Top Products
     const topProductsData = await sequelize.query(`
       SELECT 
         p.id,
@@ -159,7 +151,7 @@ export async function GET(request: NextRequest) {
         COALESCE(SUM(ti.total_price), 0) as revenue
       FROM products p
       LEFT JOIN categories c ON c.id = p.category_id
-      LEFT JOIN transactionitems ti ON ti.product_id = p.id
+      LEFT JOIN transaction_items ti ON ti.product_id = p.id
       LEFT JOIN transactions t ON t.id = ti.transaction_id
         AND t.created_at BETWEEN :start AND :end
         AND t.status = 'completed'
@@ -172,7 +164,6 @@ export async function GET(request: NextRequest) {
       type: QueryTypes.SELECT
     }) as any[];
 
-    // Daily Data (for potential future use)
     const dailyData = await Transaction.findAll({
       where: {
         created_at: { [Op.between]: [start, end] },
@@ -188,7 +179,6 @@ export async function GET(request: NextRequest) {
       raw: true
     }) as any[];
 
-    // Format data for response
     const formattedHourly = hourlyData.map((item: any) => ({
       hour: `${item.hour_val}:00`,
       total: parseFloat(item.total || 0)
@@ -210,8 +200,7 @@ export async function GET(request: NextRequest) {
     });
 
     const totalCount = paymentMethodsData.reduce((sum, pm) => sum + parseInt(pm.count || 0), 0);
-    const totalRevenue = paymentMethodsData.reduce((sum, pm) => sum + parseFloat(pm.revenue || 0), 0);
-
+    
     const formattedPaymentMethods = paymentMethodsData.map(pm => ({
       method: pm.payment_method,
       count: parseInt(pm.count || 0),

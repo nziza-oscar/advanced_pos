@@ -94,6 +94,7 @@ export function PricingPlans() {
 
   return (
     <div className="space-y-16">
+      
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4 items-start">
         {plans.map((plan) => {
           const isExpanded = expandedPlans.includes(plan.name);

@@ -9,6 +9,7 @@ import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navigation = [
+  { name: 'Home', href: '/' },
   { name: 'Features', href: '/features' },
   { name: 'Pricing', href: '/pricing' },
   { name: 'About', href: '/about' },
@@ -49,7 +50,7 @@ export function MarketingHeader() {
                 <Logo className="h-9 w-9 text-indigo-500" />
               </div>
               <span className="text-xl font-semibold tracking-tight text-slate-800">
-                POS System
+                OneManager
               </span>
             </Link>
           </div>

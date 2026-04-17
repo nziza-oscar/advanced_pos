@@ -17,7 +17,7 @@ async function syncDatabase() {
     console.log('✅ Database connected successfully');
     
     // Sync all models with alter: true
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: true,force:true });
     console.log('✅ Database synced successfully');
     
     // Create default super admin if not exists

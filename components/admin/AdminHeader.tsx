@@ -1,33 +1,44 @@
 // components/admin/AdminHeader.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bell, Search, Menu, User, ChevronDown, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Bell, Search, Menu, User, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { useAdminActions, useSearchQuery } from '@/lib/store/adminSelectors';
 
-interface AdminHeaderProps {
-  onMenuClick: () => void;
-}
-
-export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showSearch, setShowSearch] = useState(false);
+export default function AdminHeader() {
+  const router = useRouter();
+  const searchQuery = useSearchQuery();
+  const { setSearchQuery, setSidebarOpen } = useAdminActions();
+  
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const menuRef = useRef<HTMLDivElement>(null);
 
+  // Close menu when clicking outside
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle search
-    console.log('Searching:', searchQuery);
-    setShowSearch(false);
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (localSearch !== searchQuery) {
+        setSearchQuery(localSearch);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [localSearch, searchQuery, setSearchQuery]);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
   };
 
   return (
@@ -35,118 +46,79 @@ export default function AdminHeader({ onMenuClick }: AdminHeaderProps) {
       <div className="px-4 md:px-6 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Left section */}
-          <div className="flex items-center space-x-3 md:space-x-4">
+          <div className="flex items-center space-x-4">
             <button
-              onClick={onMenuClick}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
             >
-              <Menu className="w-5 h-5 text-gray-600" />
+              <Menu className="w-5 h-5" />
             </button>
             
-            {/* Desktop search */}
-            {!isMobile && (
-              <div className="hidden md:block relative w-64 lg:w-96">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search tenants, users, transactions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                />
-              </div>
-            )}
+            {/* Search */}
+            <div className="hidden md:block relative w-96">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            </div>
           </div>
           
           {/* Right section */}
-          <div className="flex items-center space-x-2 md:space-x-4">
-            {/* Mobile search button */}
-            {isMobile && (
-              <button
-                onClick={() => setShowSearch(true)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Search className="w-5 h-5 text-gray-600" />
-              </button>
-            )}
-            
+          <div className="flex items-center space-x-4">
             {/* Notifications */}
-            <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
+            <button className="relative p-2 hover:bg-gray-100 rounded-lg">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
             </button>
             
             {/* User menu */}
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center space-x-2 md:space-x-3 p-1 md:p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center space-x-2 p-2 hover:bg-gray-100 rounded-lg"
               >
-                <div className="w-7 h-7 md:w-8 md:h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
                 </div>
-                <div className="hidden sm:block text-left">
-                  <p className="text-sm font-medium text-gray-900">Super Admin</p>
-                  <p className="text-xs text-gray-500">admin@pos.com</p>
-                </div>
-                <ChevronDown className="w-4 h-4 text-gray-500 hidden sm:block" />
+                <span className="hidden md:inline text-sm font-medium">Super Admin</span>
+                <ChevronDown className="w-4 h-4" />
               </button>
               
               {/* Dropdown menu */}
               {showUserMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-10"
-                    onClick={() => setShowUserMenu(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-20">
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors">
-                      Profile
-                    </button>
-                    <button className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 transition-colors">
-                      Settings
-                    </button>
-                    <hr className="my-1" />
-                    <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 transition-colors">
-                      Logout
-                    </button>
-                  </div>
-                </>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border py-1 z-20">
+                  <button
+                    onClick={() => router.push('/admin/profile')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <User className="w-4 h-4" />
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => router.push('/admin/settings')}
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <Settings className="w-4 h-4" />
+                    Settings
+                  </button>
+                  <hr className="my-1" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
               )}
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Mobile search modal */}
-      {showSearch && (
-        <div className="fixed inset-0 bg-white z-50 md:hidden">
-          <div className="p-4 border-b flex items-center space-x-3">
-            <button
-              onClick={() => setShowSearch(false)}
-              className="p-2 hover:bg-gray-100 rounded-lg"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <form onSubmit={handleSearch} className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search tenants, users, transactions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </form>
-          </div>
-          <div className="p-4">
-            <p className="text-sm text-gray-500">Type to search...</p>
-          </div>
-        </div>
-      )}
     </header>
   );
 }

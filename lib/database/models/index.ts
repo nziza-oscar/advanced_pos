@@ -8,8 +8,10 @@ import Barcode from './Barcode';
 import Transaction from './Transaction';
 import TransactionItem from './TransactionItem';
 import StockLog from './StockLog';
+import Subscription from './Subscription';
+import Setting from './Setting';
 
-// Tenant associations
+// Tenant associations - avoid using 'settings' as association name since Tenant already has a 'settings' attribute
 Tenant.hasMany(User, { foreignKey: 'tenant_id', as: 'users' });
 User.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
 
@@ -27,6 +29,14 @@ Transaction.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
 
 Tenant.hasMany(StockLog, { foreignKey: 'tenant_id', as: 'stock_logs' });
 StockLog.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
+
+// Subscription associations (One-to-One)
+Tenant.hasOne(Subscription, { foreignKey: 'tenant_id', as: 'subscription' });
+Subscription.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
+
+// Setting associations - use different name to avoid collision with Tenant.settings attribute
+Tenant.hasMany(Setting, { foreignKey: 'tenant_id', as: 'tenant_settings' });
+Setting.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
 
 // Category associations
 Category.hasMany(Product, { foreignKey: 'category_id', as: 'products' });
@@ -63,5 +73,7 @@ export {
   Barcode,
   Transaction,
   TransactionItem,
-  StockLog
+  StockLog,
+  Subscription,
+  Setting
 };

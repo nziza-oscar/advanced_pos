@@ -7,8 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:sync": "tsx -r dotenv/config scripts/sync.ts"
-   
+    "db:sync": "tsx -r dotenv/config scripts/sync.ts",
+    "seed":"tsx -r dotenv/config scripts/seed/seed-tenant.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

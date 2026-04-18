@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Bell,
   LogOut,
-  X
+  X,
+  BookOpen
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -37,18 +38,20 @@ const menuItems = [
     icon: Users,
     mobileOnly: false
   },
-  {
-    title: 'Products',
-    href: '/admin/products',
-    icon: Package,
-    mobileOnly: false
-  },
+ 
   {
     title: 'Transactions',
     href: '/admin/transactions',
     icon: CreditCard,
     mobileOnly: false
   },
+    {
+    title: 'Subscriptions',
+    href: '/admin/subscriptions',
+    icon: BookOpen,
+    mobileOnly: false
+  },
+
   {
     title: 'Analytics',
     href: '/admin/analytics',

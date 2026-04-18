@@ -6,12 +6,13 @@ import { TenantProvider } from '@/app/contexts/TenantContext';
 import TenantSidebar from '@/components/tenant/TenantSidebar';
 import TenantHeader from '@/components/tenant/TenantHeader';
 import jwt from 'jsonwebtoken';
+import { ModalProvider } from '@/components/ui/ModalManager';
 
 interface TenantLayoutProps {
   children: React.ReactNode;
-  params: {
+  params: Promise<{
     tenant: string;
-  };
+  }>;
 }
 
 interface JwtPayload {
@@ -24,11 +25,12 @@ interface JwtPayload {
 }
 
 export default async function TenantLayout({ children, params }: TenantLayoutProps) {
-  const { tenant: tenantSlug } = params;
+  const { tenant: tenantSlug } = await params;
   
-  // Get tenant from database
   const tenant = await getTenantBySlug(tenantSlug);
   
+
+
   if (!tenant) {
     notFound();
   }
@@ -66,6 +68,7 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
   }
   
   return (
+    <ModalProvider>
     <TenantProvider tenant={tenant}>
       <div className="flex h-screen bg-background overflow-hidden">
         <TenantSidebar tenant={tenant} userRole={user.role} />
@@ -84,5 +87,6 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
         </div>
       </div>
     </TenantProvider>
+    </ModalProvider>
   );
 }

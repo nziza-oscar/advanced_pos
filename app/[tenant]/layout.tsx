@@ -1,14 +1,26 @@
 // app/[tenant]/layout.tsx
-import { headers } from 'next/headers';
-import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
+import { notFound, redirect } from 'next/navigation';
 import { getTenantBySlug } from '@/lib/tenant/utils';
 import { TenantProvider } from '@/app/contexts/TenantContext';
+import TenantSidebar from '@/components/tenant/TenantSidebar';
+import TenantHeader from '@/components/tenant/TenantHeader';
+import jwt from 'jsonwebtoken';
 
 interface TenantLayoutProps {
   children: React.ReactNode;
   params: {
     tenant: string;
   };
+}
+
+interface JwtPayload {
+  id: string;
+  email: string;
+  username: string;
+  role: string;
+  full_name: string;
+  tenant_id: string | null;
 }
 
 export default async function TenantLayout({ children, params }: TenantLayoutProps) {
@@ -21,34 +33,55 @@ export default async function TenantLayout({ children, params }: TenantLayoutPro
     notFound();
   }
   
+  // Get token from cookies - MUST AWAIT
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  const tenantSlugCookie = cookieStore.get('tenant_slug')?.value;
+  
+  if (!token) {
+    redirect('/login');
+  }
+  
+  // Verify and decode JWT
+  let user: JwtPayload | null = null;
+  try {
+    user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production') as JwtPayload;
+  } catch (error) {
+    console.error('Invalid token:', error);
+    redirect('/login');
+  }
+  
+  if (!user) {
+    redirect('/login');
+  }
+  
+  // Check if user is super admin (should go to admin panel)
+  if (user.role === 'super_admin') {
+    redirect('/admin');
+  }
+  
+  // Verify user belongs to this tenant
+  if (user.tenant_id !== tenant.id) {
+    redirect('/unauthorized');
+  }
+  
   return (
     <TenantProvider tenant={tenant}>
-      <div className="min-h-screen bg-gray-100">
-        <header className="bg-white shadow">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-4">
-              <div className="flex items-center">
-                {tenant.logo_url && (
-                  <img src={tenant.logo_url} alt={tenant.name} className="h-8 w-auto mr-3" />
-                )}
-                <h1 className="text-xl font-semibold text-gray-900">{tenant.name}</h1>
-              </div>
-              <nav>
-                <ul className="flex space-x-4">
-                  <li><a href={`/${tenantSlug}/dashboard`} className="text-gray-700 hover:text-gray-900">Dashboard</a></li>
-                  <li><a href={`/${tenantSlug}/products`} className="text-gray-700 hover:text-gray-900">Products</a></li>
-                  <li><a href={`/${tenantSlug}/sales`} className="text-gray-700 hover:text-gray-900">Sales</a></li>
-                  <li><a href={`/${tenantSlug}/reports`} className="text-gray-700 hover:text-gray-900">Reports</a></li>
-                </ul>
-              </nav>
+      <div className="flex h-screen bg-background overflow-hidden">
+        <TenantSidebar tenant={tenant} userRole={user.role} />
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-72">
+          <TenantHeader 
+            tenant={tenant} 
+            userRole={user.role} 
+            userName={user.full_name}
+            userEmail={user.email}
+          />
+          <main className="flex-1 overflow-y-auto">
+            <div className="container mx-auto p-4 md:p-6 max-w-[1600px]">
+              {children}
             </div>
-          </div>
-        </header>
-        <main className="py-10">
-          <div className="mx-auto px-4 sm:px-6 lg:px-8">
-            {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
     </TenantProvider>
   );

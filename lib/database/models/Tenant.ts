@@ -22,7 +22,7 @@ export type TenantPlanType = typeof TenantPlan[keyof typeof TenantPlan];
 class Tenant extends Model<InferAttributes<Tenant>, InferCreationAttributes<Tenant>> {
   declare id: CreationOptional<string>;
   declare name: string;
-  declare slug: string;
+  declare slug: CreationOptional<string>;
   declare logo_url: string | null;
   declare plan: TenantPlanType;
   declare status: TenantStatusType;
@@ -33,6 +33,40 @@ class Tenant extends Model<InferAttributes<Tenant>, InferCreationAttributes<Tena
   declare max_products: number;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
+  // Helper method to generate slug from name
+  static generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  }
+
+  // Helper method to ensure unique slug
+  static async generateUniqueSlug(baseName: string, transaction?: any): Promise<string> {
+    let slug = this.generateSlug(baseName);
+    let uniqueSlug = slug;
+    let counter = 1;
+
+    while (true) {
+      const existingTenant = await Tenant.findOne({
+        where: { slug: uniqueSlug },
+        transaction
+      });
+      
+      if (!existingTenant) {
+        break;
+      }
+      
+      uniqueSlug = `${slug}-${counter}`;
+      counter++;
+    }
+    
+    return uniqueSlug;
+  }
 }
 
 Tenant.init({
@@ -51,7 +85,6 @@ Tenant.init({
     allowNull: false,
     validate: {
       isLowercase: true,
-      isAlphanumeric: true,
       len: [3, 100]
     }
   },
@@ -103,7 +136,20 @@ Tenant.init({
   indexes: [
     { fields: ['slug'] },
     { fields: ['status'] }
-  ]
+  ],
+  hooks: {
+    beforeValidate: async (tenant: Tenant, options: any) => {
+      if (!tenant.slug && tenant.name) {
+        tenant.slug = await Tenant.generateUniqueSlug(tenant.name, options.transaction);
+      }
+    },
+    beforeUpdate: async (tenant: Tenant, options: any) => {
+      // If name changed and slug wasn't manually updated, regenerate slug
+      if (tenant.changed('name') && !tenant.changed('slug')) {
+        tenant.slug = await Tenant.generateUniqueSlug(tenant.name, options.transaction);
+      }
+    }
+  }
 });
 
 export default Tenant;

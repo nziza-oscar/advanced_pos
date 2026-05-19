@@ -10,9 +10,19 @@ import TransactionItem from './TransactionItem';
 import StockLog from './StockLog';
 import Subscription from './Subscription';
 import Setting from './Setting';
+import Feature from './Feature';
+import PlanFeature from './PlanFeature';
+import TenantFeature from './TenantFeature';
+import FeatureUsage from './FeatureUsage';
 
 // Tenant associations - avoid using 'settings' as association name since Tenant already has a 'settings' attribute
-Tenant.hasMany(User, { foreignKey: 'tenant_id', as: 'users' });
+Tenant.hasMany(User, {
+  foreignKey: 'tenant_id',
+  as: 'users',
+  constraints: true,
+  onDelete: 'SET NULL', 
+  onUpdate: 'CASCADE'
+});
 User.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
 
 Tenant.hasMany(Product, { foreignKey: 'tenant_id', as: 'products' });
@@ -63,7 +73,20 @@ StockLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 User.hasMany(Barcode, { foreignKey: 'generated_by', as: 'generated_barcodes' });
 Barcode.belongsTo(User, { foreignKey: 'generated_by', as: 'generator' });
+Feature.hasMany(PlanFeature, { foreignKey: 'feature_key', sourceKey: 'key', as: 'plan_features' });
+PlanFeature.belongsTo(Feature, { foreignKey: 'feature_key', targetKey: 'key', as: 'feature' });
 
+Feature.hasMany(TenantFeature, { foreignKey: 'feature_key', sourceKey: 'key', as: 'tenant_features' });
+TenantFeature.belongsTo(Feature, { foreignKey: 'feature_key', targetKey: 'key', as: 'feature' });
+TenantFeature.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
+
+Feature.hasMany(FeatureUsage, { foreignKey: 'feature_key', sourceKey: 'key', as: 'usage' });
+FeatureUsage.belongsTo(Feature, { foreignKey: 'feature_key', targetKey: 'key', as: 'feature' });
+FeatureUsage.belongsTo(Tenant, { foreignKey: 'tenant_id', as: 'tenant' });
+
+// Tenant associations for features
+Tenant.hasMany(TenantFeature, { foreignKey: 'tenant_id', as: 'feature_overrides' });
+Tenant.hasMany(FeatureUsage, { foreignKey: 'tenant_id', as: 'feature_usage' });
 export {
   sequelize,
   Tenant,
@@ -75,5 +98,9 @@ export {
   TransactionItem,
   StockLog,
   Subscription,
-  Setting
+  Setting,
+   Feature,
+  PlanFeature,
+  TenantFeature,
+  FeatureUsage
 };

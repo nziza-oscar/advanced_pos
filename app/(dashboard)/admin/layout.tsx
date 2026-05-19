@@ -76,9 +76,9 @@ export default function AdminLayout({
         </aside>
         
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-64 transition-all duration-300">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden lg:ml-64 transition-all duration-300 px-6">
           {/* Header */}
-          <header className="h-16 flex-shrink-0 border-b border-slate-200 bg-white sticky top-0 z-30">
+          <header className=" flex-shrink-0 border-b border-slate-200 bg-white sticky top-0 z-30">
             <AdminHeader />
           </header>
 

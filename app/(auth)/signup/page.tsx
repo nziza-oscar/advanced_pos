@@ -13,7 +13,7 @@ import { Eye, EyeOff, UserPlus, ShieldCheck, Mail, User, Building2, CreditCard }
 import { Logo } from '@/components/shared/Logo';
 
 const plans = {
-  starter: { name: 'Starter', price: 0, period: 'month', products: 50, users: 1 },
+  starter: { name: 'Basic', price: 0, period: 'month', products: 50, users: 1 },
   professional: { name: 'Professional', price: 49000, period: 'month', products: 'Unlimited', users: 5 },
   business: { name: 'Business', price: 99000, period: 'month', products: 'Unlimited', users: 15 },
   enterprise: { name: 'Enterprise', price: 199000, period: 'month', products: 'Unlimited', users: 'Unlimited' },
@@ -22,7 +22,7 @@ const plans = {
 export default function SignupPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedPlan = searchParams.get('plan') || 'starter';
+  const selectedPlan = searchParams.get('plan') || 'basic';
   
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

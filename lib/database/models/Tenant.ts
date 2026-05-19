@@ -1,7 +1,7 @@
 // lib/database/models/Tenant.ts
 import { DataTypes, Model, InferAttributes, InferCreationAttributes, CreationOptional } from 'sequelize';
 import sequelize from '../connection';
-
+import User from './User';
 export const TenantStatus = {
   ACTIVE: 'active',
   SUSPENDED: 'suspended',
@@ -26,6 +26,8 @@ class Tenant extends Model<InferAttributes<Tenant>, InferCreationAttributes<Tena
   declare logo_url: string | null;
   declare plan: TenantPlanType;
   declare status: TenantStatusType;
+  declare business_type: string | null;
+  declare country: string | null;
   declare settings: object | null;
   declare subscription_start: Date | null;
   declare subscription_end: Date | null;
@@ -33,6 +35,9 @@ class Tenant extends Model<InferAttributes<Tenant>, InferCreationAttributes<Tena
   declare max_products: number;
   declare created_at: CreationOptional<Date>;
   declare updated_at: CreationOptional<Date>;
+
+  // Association property - Tenant has many Users
+  declare users?: User[];
 
   // Helper method to generate slug from name
   static generateSlug(name: string): string {
@@ -102,6 +107,16 @@ Tenant.init({
     allowNull: false,
     defaultValue: TenantStatus.TRIAL
   },
+  business_type: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    comment: 'Type of business (retail, wholesale, restaurant, etc.)'
+  },
+  country: {
+    type: DataTypes.STRING(2),
+    allowNull: true,
+    comment: 'ISO 3166-1 alpha-2 country code'
+  },
   settings: {
     type: DataTypes.JSON,
     allowNull: true,
@@ -135,7 +150,9 @@ Tenant.init({
   updatedAt: 'updated_at',
   indexes: [
     { fields: ['slug'] },
-    { fields: ['status'] }
+    { fields: ['status'] },
+    { fields: ['business_type'] },
+    { fields: ['country'] }
   ],
   hooks: {
     beforeValidate: async (tenant: Tenant, options: any) => {
@@ -151,5 +168,7 @@ Tenant.init({
     }
   }
 });
+
+
 
 export default Tenant;

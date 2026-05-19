@@ -4,11 +4,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Bell, Search, Menu, User, ChevronDown, LogOut, Settings } from 'lucide-react';
-import { useAdminActions, useSearchQuery } from '@/lib/store/adminSelectors';
+import { useAdminActions, useSearchQuery,useSidebarOpen } from '@/lib/store/adminSelectors';
 
 export default function AdminHeader() {
   const router = useRouter();
   const searchQuery = useSearchQuery();
+  const sidebarOpen = useSidebarOpen();
+  console.log('AdminHeader - sidebarOpen:', sidebarOpen);
   const { setSearchQuery, setSidebarOpen } = useAdminActions();
   
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -42,14 +44,14 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="bg-white border-b sticky top-0 z-10">
+    <header className="ml-48 ">
       <div className="px-4 md:px-6 py-3 md:py-4">
         <div className="flex items-center justify-between">
           {/* Left section */}
           <div className="flex items-center space-x-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 hover:bg-gray-100 rounded-lg"
+              className=" bg-blue-400 px-2 py-2 text-white rounded-lg cursor-pointer"
             >
               <Menu className="w-5 h-5" />
             </button>
